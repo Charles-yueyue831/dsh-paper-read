@@ -1,0 +1,7 @@
+node_modules/
+*.tgz
+.paper-insight/
+coverage/
+
+# Private local acceptance logs and model configuration
+acceptance-local/

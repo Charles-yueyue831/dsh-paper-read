@@ -1,0 +1,66 @@
+{
+  "passed": true,
+  "paper": "ReAct: Synergizing Reasoning and Acting in Language Models",
+  "reference": "arxiv:2210.03629v3",
+  "coverage": "extracted-text",
+  "chunks": 9,
+  "evidenceQuotes": 54,
+  "sections": [
+    "paper",
+    "first-principles",
+    "sandbox",
+    "features",
+    "products",
+    "experience",
+    "landscape",
+    "transfer",
+    "beginner",
+    "decision"
+  ],
+  "findings": 47,
+  "relatedReferences": 36,
+  "modelCalls": 15,
+  "sourceGaps": [],
+  "files": [
+    {
+      "name": "manifest.json",
+      "bytes": 6968,
+      "sha256": "4db277124093f4c33e4e90c9201dc78917cf1e867dd25b88b5988ac7a0b8d98f"
+    },
+    {
+      "name": "document.json",
+      "bytes": 219534,
+      "sha256": "86a51938dbb2895e8a19de1f0cf022d5c38a2752b2b5faca5331a37f97d2a28f"
+    },
+    {
+      "name": "source.txt",
+      "bytes": 104736,
+      "sha256": "d11c122079b1649603ea5f255e481c98a8969fa4007c5dc1931ef9d42f379cad"
+    },
+    {
+      "name": "evidence.json",
+      "bytes": 43299,
+      "sha256": "a8fe346f061751d7a74382bc2085d393c2a4673f0ca57f14f99414b831c971e4"
+    },
+    {
+      "name": "references.json",
+      "bytes": 75090,
+      "sha256": "0e2168335b080a25a8cc6ba9628e9621b42328478ba07df10924c17e65a6197b"
+    },
+    {
+      "name": "report.json",
+      "bytes": 178940,
+      "sha256": "f160e608d0d6ee552e4812ff997aaca821653ae04734a08a075680ecb43faec5"
+    },
+    {
+      "name": "report.md",
+      "bytes": 90633,
+      "sha256": "af80b5247f8efdfffdce3c392285fdde5e9ed228a833b0fe992ada9fc2115170"
+    },
+    {
+      "name": "references.bib",
+      "bytes": 14705,
+      "sha256": "1f17e312a90c7a1aa9987837f78283600b974b86a756992578a4e0dd1bca0cfa"
+    }
+  ]
+}

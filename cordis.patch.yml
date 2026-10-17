@@ -1,0 +1,12 @@
+- insert:
+    - id: paper-insight
+      name: dsh-paper-insight
+      inject: [tools, llm, sandboxPolicy]
+      config:
+        outputDir: .paper-insight
+        sources: [arxiv, openreview, semantic-scholar, openalex]
+        maxPapers: 5
+        maxChunks: 16
+        chunkChars: 12000
+        maxOutputTokens: 7000
+        language: zh-CN

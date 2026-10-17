@@ -1,0 +1,58 @@
+{
+  "name": "dsh-paper-insight",
+  "version": "0.1.0",
+  "description": "DeepSeek Harness 文献研究插件：多源检索、证据分析、Agent 沙箱与产品创新、本地归档。",
+  "type": "module",
+  "main": "index.js",
+  "exports": {
+    ".": "./index.js",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "index.js",
+    "lib",
+    "prompts",
+    "cordis.patch.yml",
+    "README.md",
+    "docs",
+    "scripts",
+    "tests",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=22.12.0",
+    "dsh": ">=0.2.1-alpha.2 <0.3.0"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  },
+  "scripts": {
+    "test": "node --test tests/*.test.js",
+    "test:live": "node scripts/live-smoke.js",
+    "test:host": "node scripts/host-smoke.js",
+    "check": "node --check index.js && node --test tests/*.test.js",
+    "test:acceptance": "node scripts/verify-acceptance.js"
+  },
+  "dependencies": {
+    "cheerio": "1.1.2",
+    "fast-xml-parser": "5.11.2",
+    "pdfjs-dist": "5.4.296",
+    "zod": "4.1.12"
+  },
+  "keywords": [
+    "dsh",
+    "dsh-plugin",
+    "deepseek-harness",
+    "papers",
+    "research",
+    "agent-sandbox"
+  ],
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Charles-yueyue831/dsh-paper-read.git"
+  },
+  "homepage": "https://github.com/Charles-yueyue831/dsh-paper-read#readme"
+}
