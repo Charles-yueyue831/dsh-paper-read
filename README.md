@@ -14,15 +14,17 @@
 npm install -g @deepseek-ai/dsh@0.2.1-rc.2
 ```
 
-从交付的安装包安装（将路径改成你下载的位置）：
+从 npm 安装到 Harness 的 Web profile：
 
 ```sh
-dsh plugin --profile web add /absolute/path/dsh-paper-insight-0.1.0.tgz
+dsh plugin --profile web add dsh-paper-insight@0.1.1
 dsh --profile web --dump-config
 dsh web
 ```
 
-若启用了 HMR，新安装的插件可自动加载；替换已安装的插件代码后请重启 Harness。`--dump-config` 中应包含 `paper-insight` 插件行。插件没有发布到公共 npm，不能直接用裸包名从 npm 下载。
+若启用了 HMR，新安装的插件可自动加载；替换已安装的插件代码后请重启 Harness。`--dump-config` 中应包含 `paper-insight` 插件行。
+
+也可下载 [GitHub Release](https://github.com/Charles-yueyue831/dsh-paper-read/releases) 中的安装包，然后执行 `dsh plugin --profile web add /absolute/path/dsh-paper-insight-0.1.1.tgz`。
 
 从源码目录安装：
 
@@ -37,7 +39,7 @@ dsh web
 也可以安装到官方命令行模式，再直接传入自然语言需求：
 
 ```sh
-dsh plugin --profile headless add /absolute/path/dsh-paper-insight-0.1.0.tgz
+dsh plugin --profile headless add dsh-paper-insight@0.1.1
 dsh headless "检索 ReAct 论文，按十项要求完整分析并保存到本地。"
 ```
 
