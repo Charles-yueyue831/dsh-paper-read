@@ -1,0 +1,166 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "outputDir": {
+      "default": ".paper-insight",
+      "type": "string"
+    },
+    "sources": {
+      "default": [
+        "arxiv",
+        "openreview",
+        "semantic-scholar",
+        "openalex",
+        "crossref"
+      ],
+      "minItems": 1,
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "arxiv",
+          "openreview",
+          "semantic-scholar",
+          "openalex",
+          "crossref"
+        ]
+      }
+    },
+    "concurrency": {
+      "default": 1,
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 4
+    },
+    "topics": {
+      "default": [],
+      "maxItems": 50,
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 600
+      }
+    },
+    "lookbackDays": {
+      "default": 30,
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 3650
+    },
+    "historyLimit": {
+      "default": 2000,
+      "type": "integer",
+      "minimum": 100,
+      "maximum": 10000
+    },
+    "webEnabled": {
+      "default": true,
+      "type": "boolean"
+    },
+    "maxPapers": {
+      "default": 5,
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 20
+    },
+    "maxChunks": {
+      "default": 16,
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 50
+    },
+    "chunkChars": {
+      "default": 12000,
+      "type": "integer",
+      "minimum": 2000,
+      "maximum": 20000
+    },
+    "maxOutputTokens": {
+      "default": 7000,
+      "type": "integer",
+      "minimum": 1500,
+      "maximum": 16000
+    },
+    "maxExtractionTokens": {
+      "default": 6000,
+      "type": "integer",
+      "minimum": 1500,
+      "maximum": 16000
+    },
+    "modelTimeoutMs": {
+      "default": 180000,
+      "type": "integer",
+      "minimum": 1000,
+      "maximum": 900000
+    },
+    "httpTimeoutMs": {
+      "default": 30000,
+      "type": "integer",
+      "minimum": 1000,
+      "maximum": 120000
+    },
+    "maxDownloadBytes": {
+      "default": 20000000,
+      "type": "integer",
+      "minimum": 1000,
+      "maximum": 50000000
+    },
+    "maxPages": {
+      "default": 100,
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 300
+    },
+    "maxRelated": {
+      "default": 12,
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 50
+    },
+    "language": {
+      "default": "zh-CN",
+      "type": "string",
+      "enum": [
+        "zh-CN",
+        "en"
+      ]
+    },
+    "provider": {
+      "type": "string"
+    },
+    "model": {
+      "type": "string"
+    },
+    "extraHosts": {
+      "default": [],
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "required": [
+    "outputDir",
+    "sources",
+    "concurrency",
+    "topics",
+    "lookbackDays",
+    "historyLimit",
+    "webEnabled",
+    "maxPapers",
+    "maxChunks",
+    "chunkChars",
+    "maxOutputTokens",
+    "maxExtractionTokens",
+    "modelTimeoutMs",
+    "httpTimeoutMs",
+    "maxDownloadBytes",
+    "maxPages",
+    "maxRelated",
+    "language",
+    "extraHosts"
+  ],
+  "additionalProperties": false
+}

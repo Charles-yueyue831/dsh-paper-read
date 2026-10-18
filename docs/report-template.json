@@ -1,0 +1,277 @@
+{
+  "schemaVersion": 2,
+  "promptVersion": "0.2.0",
+  "sections": [
+    {
+      "id": "paper",
+      "summary": "有来源支持的摘要或明确的证据缺口",
+      "details": {
+        "background": "依据材料填写；无证据时说明缺口",
+        "problem": "依据材料填写；无证据时说明缺口",
+        "oneSentenceIdea": "依据材料填写；无证据时说明缺口",
+        "mechanism": "依据材料填写；无证据时说明缺口",
+        "inputProcessOutput": "依据材料填写；无证据时说明缺口",
+        "innovation": "依据材料填写；无证据时说明缺口",
+        "experiments": "依据材料填写；无证据时说明缺口",
+        "conditions": "依据材料填写；无证据时说明缺口",
+        "limitations": "依据材料填写；无证据时说明缺口",
+        "value": "依据材料填写；无证据时说明缺口",
+        "beginnerVersion": "依据材料填写；无证据时说明缺口",
+        "productManagerVersion": "依据材料填写；无证据时说明缺口",
+        "engineeringVersion": "依据材料填写；无证据时说明缺口",
+        "formulas": "依据材料填写；无证据时说明缺口"
+      },
+      "findings": [
+        {
+          "statement": "可核实结论或明确标注的推断",
+          "kind": "unknown",
+          "evidenceIds": [],
+          "confidence": "low",
+          "implication": "含义",
+          "validation": "验证方法及条件"
+        }
+      ]
+    },
+    {
+      "id": "first-principles",
+      "summary": "有来源支持的摘要或明确的证据缺口",
+      "details": {
+        "fundamentalGoal": "依据材料填写；无证据时说明缺口",
+        "constraints": "依据材料填写；无证据时说明缺口",
+        "primaryContradiction": "依据材料填写；无证据时说明缺口",
+        "secondaryContradictions": "依据材料填写；无证据时说明缺口",
+        "existingSolution": "依据材料填写；无证据时说明缺口",
+        "newMechanism": "依据材料填写；无证据时说明缺口",
+        "costAndBoundary": "依据材料填写；无证据时说明缺口",
+        "newContradiction": "依据材料填写；无证据时说明缺口",
+        "simplerAlternatives": "依据材料填写；无证据时说明缺口"
+      },
+      "findings": [
+        {
+          "statement": "可核实结论或明确标注的推断",
+          "kind": "unknown",
+          "evidenceIds": [],
+          "confidence": "low",
+          "implication": "含义",
+          "validation": "验证方法及条件"
+        }
+      ]
+    },
+    {
+      "id": "sandbox",
+      "summary": "有来源支持的摘要或明确的证据缺口",
+      "details": {
+        "applicability": "依据材料填写；无证据时说明缺口",
+        "relatedLayer": "依据材料填写；无证据时说明缺口",
+        "traditionalApproach": "依据材料填写；无证据时说明缺口",
+        "integrationChanges": "依据材料填写；无证据时说明缺口",
+        "interfacesAndResources": "依据材料填写；无证据时说明缺口",
+        "metrics": "依据材料填写；无证据时说明缺口",
+        "risks": "依据材料填写；无证据时说明缺口",
+        "horizon": "依据材料填写；无证据时说明缺口"
+      },
+      "findings": [
+        {
+          "statement": "可核实结论或明确标注的推断",
+          "kind": "unknown",
+          "evidenceIds": [],
+          "confidence": "low",
+          "implication": "含义",
+          "validation": "验证方法及条件"
+        }
+      ]
+    },
+    {
+      "id": "features",
+      "summary": "有来源支持的摘要或明确的证据缺口",
+      "details": {
+        "technicalCapability": "依据材料填写；无证据时说明缺口",
+        "productCapability": "依据材料填写；无证据时说明缺口",
+        "userRole": "依据材料填写；无证据时说明缺口",
+        "scenario": "依据材料填写；无证据时说明缺口",
+        "painPoint": "依据材料填写；无证据时说明缺口",
+        "requirement": "依据材料填写；无证据时说明缺口",
+        "featureDesign": "依据材料填写；无证据时说明缺口",
+        "implementation": "依据材料填写；无证据时说明缺口",
+        "benefits": "依据材料填写；无证据时说明缺口",
+        "metrics": "依据材料填写；无证据时说明缺口",
+        "cost": "依据材料填写；无证据时说明缺口",
+        "risks": "依据材料填写；无证据时说明缺口",
+        "priority": "依据材料填写；无证据时说明缺口"
+      },
+      "findings": [
+        {
+          "statement": "可核实结论或明确标注的推断",
+          "kind": "unknown",
+          "evidenceIds": [],
+          "confidence": "low",
+          "implication": "含义",
+          "validation": "验证方法及条件"
+        }
+      ]
+    },
+    {
+      "id": "products",
+      "summary": "有来源支持的摘要或明确的证据缺口",
+      "details": {
+        "name": "依据材料填写；无证据时说明缺口",
+        "concept": "依据材料填写；无证据时说明缺口",
+        "users": "依据材料填写；无证据时说明缺口",
+        "scenario": "依据材料填写；无证据时说明缺口",
+        "painPoint": "依据材料填写；无证据时说明缺口",
+        "value": "依据材料填写；无证据时说明缺口",
+        "capabilities": "依据材料填写；无证据时说明缺口",
+        "mvp": "依据材料填写；无证据时说明缺口",
+        "businessHypothesis": "依据材料填写；无证据时说明缺口",
+        "metrics": "依据材料填写；无证据时说明缺口",
+        "risks": "依据材料填写；无证据时说明缺口",
+        "technologyNecessity": "依据材料填写；无证据时说明缺口",
+        "feasibilityStatus": "依据材料填写；无证据时说明缺口"
+      },
+      "findings": [
+        {
+          "statement": "可核实结论或明确标注的推断",
+          "kind": "unknown",
+          "evidenceIds": [],
+          "confidence": "low",
+          "implication": "含义",
+          "validation": "验证方法及条件"
+        }
+      ]
+    },
+    {
+      "id": "experience",
+      "summary": "有来源支持的摘要或明确的证据缺口",
+      "details": {
+        "beforeJourney": "依据材料填写；无证据时说明缺口",
+        "afterJourney": "依据材料填写；无证据时说明缺口",
+        "usability": "依据材料填写；无证据时说明缺口",
+        "efficiency": "依据材料填写；无证据时说明缺口",
+        "reliability": "依据材料填写；无证据时说明缺口",
+        "transparency": "依据材料填写；无证据时说明缺口",
+        "control": "依据材料填写；无证据时说明缺口",
+        "trust": "依据材料填写；无证据时说明缺口",
+        "automation": "依据材料填写；无证据时说明缺口",
+        "metrics": "依据材料填写；无证据时说明缺口",
+        "guardrails": "依据材料填写；无证据时说明缺口"
+      },
+      "findings": [
+        {
+          "statement": "可核实结论或明确标注的推断",
+          "kind": "unknown",
+          "evidenceIds": [],
+          "confidence": "low",
+          "implication": "含义",
+          "validation": "验证方法及条件"
+        }
+      ]
+    },
+    {
+      "id": "landscape",
+      "summary": "有来源支持的摘要或明确的证据缺口",
+      "details": {
+        "retrievalDate": "依据材料填写；无证据时说明缺口",
+        "origins": "依据材料填写；无证据时说明缺口",
+        "milestones": "依据材料填写；无证据时说明缺口",
+        "routes": "依据材料填写；无证据时说明缺口",
+        "breakthroughs": "依据材料填写；无证据时说明缺口",
+        "currentState": "依据材料填写；无证据时说明缺口",
+        "verifiedProgress": "依据材料填写；无证据时说明缺口",
+        "hypothesizedTrends": "依据材料填写；无证据时说明缺口",
+        "evidenceGaps": "依据材料填写；无证据时说明缺口"
+      },
+      "findings": [
+        {
+          "statement": "可核实结论或明确标注的推断",
+          "kind": "unknown",
+          "evidenceIds": [],
+          "confidence": "low",
+          "implication": "含义",
+          "validation": "验证方法及条件"
+        }
+      ]
+    },
+    {
+      "id": "transfer",
+      "summary": "有来源支持的摘要或明确的证据缺口",
+      "details": {
+        "reusableMechanism": "依据材料填写；无证据时说明缺口",
+        "conditions": "依据材料填写；无证据时说明缺口",
+        "sourceDomain": "依据材料填写；无证据时说明缺口",
+        "targetDomain": "依据材料填写；无证据时说明缺口",
+        "similarities": "依据材料填写；无证据时说明缺口",
+        "differences": "依据材料填写；无证据时说明缺口",
+        "adaptation": "依据材料填写；无证据时说明缺口",
+        "lossAndCost": "依据材料填写；无证据时说明缺口",
+        "experiment": "依据材料填写；无证据时说明缺口",
+        "nonTransferConditions": "依据材料填写；无证据时说明缺口"
+      },
+      "findings": [
+        {
+          "statement": "可核实结论或明确标注的推断",
+          "kind": "unknown",
+          "evidenceIds": [],
+          "confidence": "low",
+          "implication": "含义",
+          "validation": "验证方法及条件"
+        }
+      ]
+    },
+    {
+      "id": "beginner",
+      "summary": "有来源支持的摘要或明确的证据缺口",
+      "details": {
+        "concreteProblem": "依据材料填写；无证据时说明缺口",
+        "intuition": "依据材料填写；无证据时说明缺口",
+        "traditionalAnalogy": "依据材料填写；无证据时说明缺口",
+        "traditionalLimits": "依据材料填写；无证据时说明缺口",
+        "newIdea": "依据材料填写；无证据时说明缺口",
+        "workedExample": "依据材料填写；无证据时说明缺口",
+        "concepts": "依据材料填写；无证据时说明缺口",
+        "mechanism": "依据材料填写；无证据时说明缺口",
+        "productExamples": "依据材料填写；无证据时说明缺口",
+        "limits": "依据材料填写；无证据时说明缺口",
+        "learningPath": "依据材料填写；无证据时说明缺口"
+      },
+      "findings": [
+        {
+          "statement": "可核实结论或明确标注的推断",
+          "kind": "unknown",
+          "evidenceIds": [],
+          "confidence": "low",
+          "implication": "含义",
+          "validation": "验证方法及条件"
+        }
+      ]
+    },
+    {
+      "id": "decision",
+      "summary": "有来源支持的摘要或明确的证据缺口",
+      "details": {
+        "furtherReading": "依据材料填写；无证据时说明缺口",
+        "technicalExperiments": "依据材料填写；无证据时说明缺口",
+        "sandboxRoadmap": "依据材料填写；无证据时说明缺口",
+        "prototypeFeatures": "依据材料填写；无证据时说明缺口",
+        "productResearch": "依据材料填写；无证据时说明缺口",
+        "doNotAdopt": "依据材料填写；无证据时说明缺口",
+        "valueFeasibilityCostRiskEvidence": "依据材料填写；无证据时说明缺口",
+        "hypothesis": "依据材料填写；无证据时说明缺口",
+        "steps": "依据材料填写；无证据时说明缺口",
+        "resources": "依据材料填写；无证据时说明缺口",
+        "control": "依据材料填写；无证据时说明缺口",
+        "successCriteria": "依据材料填写；无证据时说明缺口",
+        "stopConditions": "依据材料填写；无证据时说明缺口"
+      },
+      "findings": [
+        {
+          "statement": "可核实结论或明确标注的推断",
+          "kind": "unknown",
+          "evidenceIds": [],
+          "confidence": "low",
+          "implication": "含义",
+          "validation": "验证方法及条件"
+        }
+      ]
+    }
+  ]
+}

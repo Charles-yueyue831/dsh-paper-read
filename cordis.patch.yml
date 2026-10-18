@@ -4,7 +4,7 @@
       inject: [tools, llm, sandboxPolicy]
       config:
         outputDir: .paper-insight
-        sources: [arxiv, openreview, semantic-scholar, openalex]
+        sources: [arxiv, openreview, semantic-scholar, openalex, crossref]
         maxPapers: 5
         maxChunks: 16
         chunkChars: 12000

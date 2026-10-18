@@ -40,8 +40,10 @@ try {
   await ctx.plugin(SystemPrompt); await ctx.plugin(ToolRuntime); await ctx.plugin(LlmRuntime); await ctx.plugin(PolicyFixture);
   ctx.llm.registerAdapter(['fixture'], new ResearchFixtureAdapter());
   const fiber = await ctx.plugin(Plugin, { provider: 'fixture', model: 'fixture-model', maxChunks: 1 });
-  assert.equal(ctx.tools.schemas().filter(t => t.name.startsWith('paper_insight_')).length, 6);
+  assert.equal(ctx.tools.schemas().filter(t => t.name.startsWith('paper_insight_')).length, Plugin.createTools({}).length);
   const signal = new AbortController().signal;
+  const searched=await ctx.tools.execute({signal,callId:'search-regression',name:'paper_insight_search',arguments:{query:'fixture',sources:['openalex']}});
+  assert.equal(searched.isError,false,JSON.stringify(searched));
   const result = await ctx.tools.execute({ signal, callId: 'paper-test', name: 'paper_insight_analyze', arguments: { file: 'fixture.txt' } });
   assert.equal(result.isError, false, JSON.stringify(result));
   assert.equal(result.value.status, 'completed'); assert.equal(requests, 6);
@@ -54,7 +56,7 @@ try {
   assert.equal(malformed.isError, true);
   await fiber.dispose();
   assert.equal(ctx.tools.schemas().filter(t => t.name.startsWith('paper_insight_')).length, 0);
-  console.log(JSON.stringify({ ok: true, runtime: 'DSH 0.2.1-rc.2 / Cordis 4.0.5', tools: 6, modelCalls: requests, sections: 10,
+  console.log(JSON.stringify({ ok: true, runtime: 'DSH 0.2.1-rc.2 / Cordis 4.0.5', tools: Plugin.createTools({}).length, modelCalls: requests, sections: 10,
     tests: ['real Cordis load/unload', 'real tool registry canonical output', 'real LLM runtime with fixture adapter', 'local artifact pipeline', 'read-only policy fixture', 'input validation'],
     note: 'Synthetic paper/model responses. No live paid model, UI, SSH or production sandbox backend was used.' }, null, 2));
 } finally { globalThis.fetch = originalFetch; await ctx.fiber.dispose(); await fs.rm(root, { recursive: true, force: true }); }

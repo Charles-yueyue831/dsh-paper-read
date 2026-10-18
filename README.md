@@ -1,215 +1,177 @@
-# dsh-paper-read（dsh-paper-insight）
+# dsh-paper-insight · 论文 → 产品
 
-在 DeepSeek Harness 中检索 AI 论文，使用当前会话的大模型提取证据、分析技术与产品机会，并将报告保存在本地。
+DeepSeek Harness 的 Cordis 研究插件。将公开论文检索、证据提取、技术理解、Agent 沙箱迁移、产品创新和 PoC 串成可恢复的研究流程。包名保持 `dsh-paper-insight`，工作台显示“论文研究”。
 
-按 `dsh-git-vcs@0.2.0` 的 Cordis 插件与组合包方式组织：ESM 入口、`apply`、`inject`、`dsh.bundle`、`cordis.patch.yml`。本插件通过对话中的工具使用，宿主不需要额外的 MCP 服务或另一份模型密钥。
+## 安装与侧边栏
 
-## 安装
+需要 Node.js ≥ 22.12 和 DeepSeek Harness `>=0.2.1-alpha.2 <0.3.0`。已验证的宿主及测试范围见 [验收记录](docs/acceptance-v0.2.0.md)。
 
-要求 Node.js ≥ 22.12.0。兼容基线为 DeepSeek Harness **0.2.1-alpha.2** 和 **0.2.1-rc.2**；真实模型验收与宿主服务测试的区别见 [验证记录](docs/compatibility.md)。仓库名为 `dsh-paper-read`，安装包名和工具前缀分别为 `dsh-paper-insight`、`paper_insight_`。
-
-如果尚未安装兼容的 Harness：
-
-```sh
-npm install -g @deepseek-ai/dsh@0.2.1-rc.2
-```
-
-从 npm 安装到 Harness 的 Web profile：
-
-```sh
-dsh plugin --profile web add dsh-paper-insight@0.1.1
-dsh --profile web --dump-config
+```bash
+dsh plugin --profile web add dsh-paper-insight@0.2.0
 dsh web
 ```
 
-若启用了 HMR，新安装的插件可自动加载；替换已安装的插件代码后请重启 Harness。`--dump-config` 中应包含 `paper-insight` 插件行。
+已运行的 Harness 请在当前任务完成后重启，刷新浏览器。左侧点击 **论文研究**：
 
-也可下载 [GitHub Release](https://github.com/Charles-yueyue831/dsh-paper-read/releases) 中的安装包，然后执行 `dsh plugin --profile web add /absolute/path/dsh-paper-insight-0.1.1.tgz`。
+1. 先在 Harness 创建或打开一个会话，选择工作区与模型，并允许工作区写入。
+2. 工作台选择该会话。检索主题，或输入 URL / DOI / arXiv ID / 本地文件路径。
+3. 勾选研究模块并开始分析，查看阶段进度；可取消，之后从历史检查点继续。
+4. 在研究历史查看、搜索、重做模块或选择报告比较。报告和引用图保存在会话工作区。
 
-从源码目录安装：
+Web 工作台目前支持本机 `localhost/127.0.0.1/::1` 的 Web Harness，不提供远程公开 HTTP 服务或 Electron IPC 适配。未打开任何会话时会提示先打开会话。工具本身可在 headless 使用：
 
-```sh
-cd /absolute/path/dsh-paper-read
-npm ci --ignore-scripts
-npm test
-dsh plugin --profile web add .
-dsh web
+```bash
+dsh plugin --profile headless add dsh-paper-insight@0.2.0
+dsh headless "检索 ReAct 论文，执行十模块分析并保存本地；然后只重做沙箱模块，比较两个版本。"
 ```
 
-也可以安装到官方命令行模式，再直接传入自然语言需求：
+Web、headless 是不同 profile，分别安装并配置模型。模型凭据由 Harness 管理，不需给插件另配模型 API Key。
 
-```sh
-dsh plugin --profile headless add dsh-paper-insight@0.1.1
-dsh headless "检索 ReAct 论文，按十项要求完整分析并保存到本地。"
-```
+## 核心能力
 
-Web 与 headless 是不同 profile，须分别安装，并在对应 profile 配好模型路由。
-
-这是无编译步骤的 JavaScript 插件，普通运行依赖由包管理器安装。不要只执行全局 `npm install dsh-paper-insight`，那样不会注册到 DSH profile。
-
-## 在 Harness 中使用
-
-先为会话选择模型并允许工作区写入，然后直接提出需求：
-
-```text
-使用 paper_insight_search 搜索 agent memory 方向论文，筛选过去一个月的结果，先给我 5 篇候选。
-```
-
-```text
-使用 paper_insight_analyze 分析 https://arxiv.org/abs/1706.03762。
-重点检查它与 Agent 沙箱、产品能力、新产品和产品体验的关系，并把报告保存到本地。
-```
-
-```text
-分析当前工作区 papers/example.pdf，使用完整的十章报告。
-如果没有获取全文或研究文献不全，请明确标记证据缺口。
-```
-
-```text
-使用 paper_insight_batch 分析刚才选出的三篇论文。
-完成后使用 paper_insight_library 列出报告路径。
-```
-
-搜索工具接收英文主题词通常更容易覆盖英文论文；它不会把每一条检索候选都当成已确认与主题相关的论文。先检查标题与摘要，再选择分析对象。
-
-## 需求与输出
-
-| 需求 | 提供的能力 |
+| 能力 | 实现与边界 |
 |---|---|
-| 1. 爬取主流学术来源的 AI 论文 | arXiv、OpenReview、Semantic Scholar、OpenAlex 官方 API；多源去重、日期过滤、来源失败说明 |
-| 2. 在 Harness 中分析并保存 | 复用会话模型；HTML/PDF/本地文件阅读；Markdown、JSON、证据文本、BibTeX 本地归档 |
-| 3. 论文与 Agent 沙箱的关系 | 分开分析用沙箱复现研究、用论文技术改进沙箱；提供接口、资源、权限、观测、评测与最小集成实验 |
-| 4. 实现新的产品功能 | 用户任务、机制到能力的映射、工作流、MVP、依赖和验收指标 |
-| 5. 创造新产品 | 目标用户、需求缺口、差异化、交付方式、成本假设、可否证实验 |
-| 6. 改善产品体验 | 体验前后对比、延迟与准确性、可解释性、失败恢复、A/B 测试与护栏指标 |
-| 7. 第一性原理与矛盾 | 目标、约束、核心瓶颈、主要和次要矛盾、作用机制、权衡与适用边界 |
-| 8. 研究现状、文献和研究脉络 | 参考文献、后续引用、相关研究、检索日期和覆盖限制；区分引用关系与推断的技术继承 |
-| 9. 技术迁移 | 不变量、源域与目标域差异、数据和接口、适配路径、负迁移和最小验证 |
-| 10. 零基础介绍与产品案例 | 日常类比及失效边界、术语、输入输出例子、练习；真实案例与新产品设想分开标记 |
+| 论文发现 | arXiv、OpenReview、Semantic Scholar、OpenAlex、Crossref 官方接口；合并 DOI/arXiv/标题重复项 |
+| 高级筛选 | 作者、机构、会议/期刊、日期、最低引用量；相关性、时间或引用量排序。按有限候选元数据过滤，字段缺失可能漏检 |
+| 导入与解析 | arXiv、DOI、OpenReview、学术索引标识、允许域名的开放 HTML/PDF、工作区 PDF/TXT/MD/HTML；扫描 PDF 需先 OCR |
+| 论文理解 | 背景、问题、机制、输入输出、创新、实验、条件、限制、价值；零基础、产品经理、工程三层解释及公式变量说明 |
+| 第一性原理 | 根本目标→客观约束→主要矛盾→次要矛盾→既有解法→新解法→代价与边界→新矛盾，含替代方案 |
+| Agent 沙箱 | 直接适用/改造后适用/间接启发/暂不适用，讨论接口、权限、资源、指标、风险、验证周期 |
+| 产品创新 | 区分技术能力、产品能力与可操作功能；新产品概念、MVP、商业假设、成本、风险与优先级 |
+| 体验、迁移、教学 | 前后旅程和指标；跨域条件及负迁移；直觉→概念→机制→案例→产品→局限 |
+| 研究脉络 | 参考文献、后续引用、相关研究、检索日期；生成 `timeline.json` 与 `relations.mmd`，引用图不冒充技术继承图 |
+| PoC | 假设、步骤、资源、对照、成功标准与停止条件；不适用的技术明确说明 |
+| 知识积累 | 研究历史全文搜索、版本差异、多报告比较、关注主题增量发现、本地产品机会与关系图聚合 |
 
-分析报告共十章：技术解析、第一性原理、Agent 沙箱、新功能、新产品、体验、研究脉络、迁移、零基础解释、验证与行动建议。检索和归档是工具能力，不作为空泛的报告章节。
+ACL Anthology、PMLR（ICML 等）、NeurIPS、CVF 的开放全文可直接导入；ICLR 可从 OpenReview 获取。IEEE/ACM 的收录元数据可经 DOI/学术索引检索，公开页面在允许列表内；无法取得合法全文时说明限制，不绕过付费墙或访问验证。没有可用外部来源时返回错误或明确来源缺口，模型记忆不会替代实时检索。
 
-报告中的结论标记为「论文事实」「文献事实」「推断」「待验证方案」「证据不足」。事实条目必须引用已存在的证据 ID，原文短引会逐字核验。校验能发现不存在的引用和错误摘录，但不替代对语义、实验或产品可行性的人工复核。
+## 工具与可编程调用
 
-## 六个工具
+全部工具以 `paper_insight_` 开头。保留 0.1.x 的六个名称；新增 17 个工具。详细输入 JSON Schema 见 [tools.json](docs/tools.json)，输出、错误和调用示例见 [API 文档](docs/api.md)。
 
-| 工具 | 主要参数 | 结果 |
-|---|---|---|
-| `paper_insight_search` | `query`，可选 `limit/sources/since/until` | 论文元数据、reference ID、来源错误、检索范围 |
-| `paper_insight_read` | `reference` 或 `file`，也可一起提供 | 正文片段、位置、阅读覆盖范围，不写报告 |
-| `paper_insight_analyze` | `reference` 或 `file` | 完整分析与归档路径 |
-| `paper_insight_batch` | `references` 数组 | 逐篇结果；单篇失败不阻断下一篇 |
-| `paper_insight_library` | 可选 `limit` | 当前工作区所有运行的状态与路径 |
-| `paper_insight_report` | `key`、`runId` | 已保存报告的 Markdown |
-
-`reference` 支持 arXiv ID/链接、OpenReview 论文链接、DOI/DOI 链接、`s2:paperId`、`openalex:W...`。论文标题应先搜索，不会被当成未经核实的论文地址。
-
-本地支持 `.pdf/.txt/.md/.html/.htm`。本地文件必须在会话工作区内；可同时提供 reference 补充准确元数据与引用检索，但需要用户确认文件与标识对应。扫描 PDF 需先 OCR。
-
-## 本地归档
-
-默认在**当前会话工作区**保存：
+| 工具后缀 | 用途 |
+|---|---|
+| `search` / `read` / `fetch` | 搜索、读取、持久化原始提取材料 |
+| `analyze` / `batch` / `resume` | 完整或指定模块分析、批量分析、从检查点续跑 |
+| `analyze_principles` / `trace_research` / `analyze_sandbox` | 单独研究原理、脉络、沙箱 |
+| `generate_capabilities` / `ideate_products` / `optimize_experience` | 单独生成产品能力、新产品、体验方案 |
+| `analyze_transfer` / `explain_for_beginners` / `generate_poc` | 单独迁移、教学、PoC |
+| `library` / `report` / `export_report` | 历史全文检索、报告读取、Markdown/JSON 导出 |
+| `compare_papers` / `compare_versions` | 多论文比较、同一归档的版本差异 |
+| `subscriptions` / `discover_updates` / `aggregate` | 关注主题、增量发现、本地知识聚合 |
 
 ```text
-.paper-insight/
-  <论文标识哈希>/
-    <时间戳-运行ID>/
-      manifest.json       运行状态、模型、用量和时间
-      document.json       元数据、全文抽取、片段及覆盖信息
-      source.txt          已抽取的原始文本，带页面/段落位置
-      evidence.json       逐段证据、短引和原文哈希
-      references.json     参考文献、后续引用、相关研究及来源缺口
-      report.md           可直接阅读的报告
-      report.json         结构化分析结果
-      references.bib      可导入文献管理器的 BibTeX
+使用 paper_insight_search 搜索 agent memory，按时间排序，限制 2026-01-01 之后。
+分析 https://arxiv.org/abs/2210.03629，仅执行 paper、sandbox、features、decision 模块。
+复用历史研究 key 和 runId，调用 paper_insight_analyze_sandbox；不要重新下载论文。
+使用 paper_insight_resume 继续刚才失败的检查点。
+使用 paper_insight_library 搜索“快照”，返回 10 条报告。
+保存关注主题“agent sandbox”和“agentic reinforcement learning”，执行一次增量发现。
 ```
 
-每次分析创建独立目录，不覆盖以前的报告。失败或取消会保留已经完成的提取结果，并将运行标记为 `failed` 或 `cancelled`；进程被强制终止时可能保留 `running`，需人工检查。重新调用会新建一次运行，当前版本不自动续接未完成的模型调用。只有全部章节和引用校验通过才标记 `completed`。
+在 Harness 插件代码中可以调用 `ctx.tools.execute({name, arguments, signal, callId, agent})`，遵循宿主真实 ToolRuntime 契约。另导出 `dsh-paper-insight/api` 的 `PaperInsight` 服务及 `createTools(service)`（包主入口），便于集成；仍须提供已配置的 Harness 服务和会话执行上下文。
+
+## 数据与恢复
+
+```text
+<会话工作区>/.paper-insight/
+  index.json                 最近运行的可重建索引
+  subscriptions.json         关注主题
+  discovery.json             已见论文/版本指纹
+  <归档key>/<runId>/
+    manifest.json            状态、模型、用量、父版本、时间
+    checkpoint.json          可恢复的文档/证据/章节检查点
+    events.json              阶段状态、时间、错误
+    metadata.json
+    document.json            解析文本、分块、定位、覆盖率
+    source.txt               带原文位置的提取文本
+    evidence.json            原文精确短引及哈希
+    references.json
+    report.md / report.json
+    product-ideas.md / poc.md
+    references.bib
+    timeline.json / relations.mmd
+```
+
+论文 `canonicalKey` 根据 DOI、无版本 arXiv ID 或规范化来源生成；运行标识独立。输入尚未解析时先建立请求归档，以便网络失败也能恢复。获取完成后记录 canonicalKey；不同输入写法的运行通过该标识关联。每次续跑或重做都创建新 runId，并记录 parentRunId，绝不覆盖旧报告。
+
+`resume` 复用成功证据块和章节；`analyze` 加 `key/runId` 复用文档和证据，重新生成选定模块。`refreshResearch:true` 更新相关文献并重新生成章节。新版本提示词不会复用旧提示词生成的章节。历史 0.1.x 报告仍可读取，但没有 checkpoint 的旧报告不能直接续跑。
+
+默认只存提取文本及链接，不自动保存远程 PDF 二进制；原始本地文件不被修改。归档里引用的页码/段落用于回查原文。失败/取消也保留检查点，强制中断可能留下 running 状态，可显式续跑。
 
 ## 配置
 
-默认配置见 `cordis.patch.yml`。可在 profile 的 patch 中替换 `paper-insight` 行配置；DSH 替换整段配置，未写出的参数使用代码默认值。普通配置不需要密钥。
+在 profile 的 `cordis.patch.yml` 中覆盖 `paper-insight` 行；配置替换整个 config，省略字段使用默认值。
 
-| 参数 | 默认值 | 含义 |
-|---|---|---|
-| `outputDir` | `.paper-insight` | 工作区内相对目录 |
-| `sources` | 四个来源 | 可选 `arxiv/openreview/semantic-scholar/openalex` |
-| `maxPapers` | 5 | 单次批量上限，最多 20 |
-| `maxChunks` | 16 | 每篇最多分析的正文片段；超过后跨全文均匀抽样并标记 partial-text |
-| `chunkChars` | 12000 | 每段字符数；可调 2000–20000 |
-| `maxOutputTokens` | 7000 | 每两章综合报告的初始输出 token 上限 |
-| `maxExtractionTokens` | 6000 | 每段证据提取的初始输出 token 上限 |
-| `modelTimeoutMs` | 180000 | 每次模型调用超时 |
-| `httpTimeoutMs` | 30000 | 一次抓取及其重试的总超时 |
-| `maxDownloadBytes` | 20000000 | 下载/本地文件大小上限 |
-| `maxPages` | 100 | PDF 最大提取页数 |
-| `maxRelated` | 12 | 每类文献最多保留数量 |
-| `provider`、`model` | 当前会话选择 | 要覆盖时必须一起设置；值来自 Harness 的已注册模型路由 |
-| `language` | `zh-CN` | 分析正文语言，可为 `en`；固定导航标题仍为中文 |
-| `extraHosts` | 空列表 | 额外允许下载的学术全文域名，完整域名，无通配符 |
-
-默认每篇先进行最多 16 次证据提取，再进行 5 次综合分析。每次结构不合格或输出截断合计最多重试一次，因此上限为 **42 次模型调用**，截断重试将该次输出预算翻倍，最高 16000 token；批量按篇累加。实际费用取决于当前模型价格与论文长度。先用 `maxChunks: 4` 可以降低试用成本，但报告会明确标记抽样。输入超过 150000 字符时会要求调低范围，不会偷偷截断证据。
-
-可选 API 密钥从启动 Harness 的环境读取：
-
-```sh
-export SEMANTIC_SCHOLAR_API_KEY='你的 Semantic Scholar 密钥'
-export OPENALEX_API_KEY='你的 OpenAlex 密钥'
-dsh web
+```yaml
+- id: paper-insight
+  config:
+    outputDir: research/papers
+    sources: [arxiv, openreview, semantic-scholar, openalex, crossref]
+    topics: [agent sandbox, agentic reinforcement learning]
+    lookbackDays: 30
+    concurrency: 1
+    maxChunks: 16
+    maxRelated: 12
+    maxPapers: 5
+    language: zh-CN
+    modelTimeoutMs: 180000
+    httpTimeoutMs: 30000
+    webEnabled: true
 ```
 
-这些是检索服务的可选凭据，与大模型凭据不同。密钥不保存到报告；已有模型凭据继续由 Harness 管理。来源限流、网络错误或授权要求会出现在结果里。
+`outputDir` 必须是当前会话工作区内的相对路径。`provider` 与 `model` 如需覆盖必须一起设置，使用 Harness 已注册路由。默认使用会话待选模型、最近模型请求或 Harness 默认模型。
 
-## 阅读与研究覆盖
+完整配置见 [config.json](docs/config.json)。其他限额包括 `chunkChars`（默认12000）、`maxOutputTokens`（7000）、`maxExtractionTokens`（6000）、`maxDownloadBytes`（20MB）、`maxPages`（100）、`historyLimit`（2000）。可用 `extraHosts` 增加明确的公开学术域名，不接受通配符、IP 或本地域名。
 
-- 优先使用 arXiv HTML，失败后尝试开放 PDF；PDF 使用 PDF.js 提取文本。默认还允许 ACL Anthology、PMLR、CVF、NeurIPS 官方全文域名；其他开放源可通过 `extraHosts` 添加。
-- 不自动绕过付费墙、验证码或登录。获取不到正文时，只在存在摘要时生成明确标记的摘要分析。
-- 公式、图片、表格、复杂双栏顺序可能无法完整抽取。`extracted-text` 表示提取范围内文本已进入分析，不表示模型已经看过所有图片。
-- 搜索为每源最多 `limit×2` 个候选的有界检索，然后本地去重与日期筛选。默认按标题相关性排序，指定 `sort: "date"` 则按候选日期排序。没有自动遍历全站或完整系统综述；结果可能不足请求数量。
-- 研究脉络使用 Semantic Scholar 的引用与被引关系、Crossref 的参考文献回退、OpenAlex 的主题相关结果。相关结果只有元数据/摘要证据，不会自动读取所有被引论文的全文。
-- 报告只能在模型能力与已获取材料范围内回答产品问题。没有可核实的真实产品来源时，明确给出设想，不把它写成已上线案例。
+可选检索凭据从环境读取 `SEMANTIC_SCHOLAR_API_KEY`、`OPENALEX_API_KEY`。不要把凭据写进论文、报告或提交到仓库。
 
-## 运行边界
+### 定期增量发现
 
-网络请求使用域名允许列表、跳转检查、超时、大小限制和有限重试；arXiv 请求之间至少间隔 3.1 秒。每个插件实例同时只运行一个分析任务，批量按顺序处理，可取消。
+插件没有常驻轮询定时器。先保存关注主题，再让 Harness 现有调度工具定期执行：
 
-读写范围取自 `ctx.sandboxPolicy` 的当前会话工作区；只读模式下拒绝生成报告。路径校验拒绝越界和已有符号链接。插件属于宿主进程，路径检查不是新的操作系统沙箱；当前版本仅验证本地工作区，不支持远程 SSH 文件世界。不要在不可信进程能够同时替换工作区路径的环境中将这些检查视为完整隔离边界。
+```text
+调用 paper_insight_discover_updates，展示新增/更新论文及来源缺口；不要自动分析所有候选。
+```
 
-证据提取时，程序给原文片段编号，模型选择编号，程序直接取回对应原文作为引文；模型不能自行生成引文。引用存在不等于推断正确，关键结论仍需核对。
+定时任务应由用户通过 Harness 调度功能创建，或由外部调度器启动已配置模型/工作区的 headless profile。增量发现会记录版本指纹，但不是穷尽所有来源的系统综述。
 
-论文内容只作为模型输入数据，分析调用不授予工具，不执行论文代码。若要复现实验，应另行使用 Harness 的执行工具和沙箱流程。
+## 安全、质量和费用
 
-## 开发与验证
+- 论文、网页和历史报告均作为不可信资料；分析调用不授予工具，不执行文中代码。
+- 事实、文献事实、推断、创新假设、证据不足分别标注；模型选择原文编号，程序生成精确短引。
+- 结构化字段缺失或引用不存在会触发一次修复；截断可提升单次输出额度，最高16000 token。无法修复时保存检查点并报错。
+- 默认最多16次逐块提取+5次分组生成，各自最多一次修复；完整研究最多42次模型调用。单模块重做通常只需1次生成；实际取决于失败与重试。
+- 部分文本、摘要分析、图表/公式抽取限制及文献来源失败会写进报告。结构与引用校验不等于证明语义正确或产品已可行。
+- 不自动把理论可能性写成收益，不把引用关系写成技术继承，不强行把论文与 Agent 沙箱关联。
+- 路径拒绝越界与符号链接；工作区只读时拒绝写报告。该检查不是操作系统沙箱，不支持远程 SSH 文件世界。
+- Web API 复用 Harness 认证入口，并额外限制本机 Host、同源请求及 JSON 请求体。归档、HTTP 和模型调用都有边界；多个宿主进程不应同时更新同一个主题订阅状态文件。
 
-```sh
+## 开发、测试与扩展
+
+```bash
 npm ci --ignore-scripts
 npm test
+DSH_TEST_ROOT=/path/to/official-runtime npm run test:host
 npm run test:live
-npm pack
+npm pack --ignore-scripts
 ```
 
-真实宿主服务测试使用隔离目录安装的官方包（该目录需有 `@deepseek-ai/cordis@4.0.5`、`@deepseek-ai/dsh-tools@0.2.1-rc.2`、`@deepseek-ai/dsh-llm@0.2.1-rc.2`、`@deepseek-ai/dsh-system-prompt@0.2.1-rc.2`）：
+`test:host` 使用真实 Cordis/ToolRuntime/LlmRuntime，但响应为合成测试数据；真实模型与侧边栏验收另见 [验收记录](docs/acceptance-v0.2.0.md)。
 
-```sh
-DSH_TEST_ROOT=/absolute/path/runtime-test npm run test:host
-```
+模块职责：`papers.js` 数据源与归一化；`http.js` 网络限制与退避；`content.js` HTML/PDF 提取；`model.js` 宿主模型适配；`analysis.js` 证据与报告校验；`modules.js` 模板字段；`workflow.js` 检查点与阶段；`storage.js` 原子归档和历史；`knowledge.js` 比较/订阅/聚合；`web.js` 工作台宿主接口；`client.js` 原生侧边栏 UI。
 
-真实提示词验收见 [acceptance.md](docs/acceptance.md)，环境与限制见 [compatibility.md](docs/compatibility.md)，架构与需求映射见 [design.md](docs/design.md)。源码内的合成测试数据不是实际论文结论。
+新增来源时扩展 `sourceNames`、`PaperSources.oneSearch/resolve` 与允许域名，补充真实 API 样本和离线失败测试。新增模块时扩展 `MODULE_FIELDS`、章节目录和分析提示词，补充 Schema 与验收案例。增加客户端功能时使用 Harness 槽位，不替换侧边栏 DOM。
 
-## 卸载
+## 故障排查
 
-```sh
-dsh plugin --profile web remove dsh-paper-insight
-```
+- `dsh: command not found`：先安装兼容的 Harness 或将已有 CLI 入口加入 PATH。
+- 找不到论文工具：确认安装的是当前使用的 profile，并检查 `dsh --profile web --dump-config` 的 paper-insight 行。
+- 侧边栏没有入口：重启已运行宿主并刷新页面；查看客户端插件加载错误。
+- 没有可选会话：先在 Harness 打开工作区和一个会话，再点刷新会话。
+- 来源429/403：降低频率、使用可选API凭据或换公开来源；不要绕过访问限制。
+- 模型错误/取消：使用返回的 key/runId 调用 resume，或从历史点击继续。
+- 扫描 PDF/解析失败：先 OCR；明确证据不足，不根据标题补造结论。
+- 旧报告无检查点：仍可读取；需要重新导入才能使用阶段恢复。
 
-卸载不删除工作区中已生成的报告。
-
-## 接口来源
-
-- [用户指定的 dsh-git-vcs 0.2.0](https://www.npmjs.com/package/dsh-git-vcs/v/0.2.0)
-- [Harness 官方插件打包说明](https://github.com/deepseek-ai/deepseek-harness/blob/master/docs/user/develop/basic/publish.md)
-- [Harness 官方工具契约](https://github.com/deepseek-ai/deepseek-harness/blob/master/docs/cookbook/adding-a-tool.md)
-- [arXiv API](https://info.arxiv.org/help/api/user-manual.html)
-- [OpenReview API](https://docs.openreview.net/reference/api-v2/openapi-definition)
-- [Semantic Scholar API](https://api.semanticscholar.org/api-docs/)
-- [OpenAlex API](https://help.openalex.org/api/)
+卸载：`dsh plugin --profile web remove dsh-paper-insight`。卸载不删除已保存研究。

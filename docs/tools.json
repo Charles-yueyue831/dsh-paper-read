@@ -1,0 +1,706 @@
+[
+  {
+    "name": "paper_insight_search",
+    "description": "检索真实学术来源。支持日期、作者、机构、会议、引用量筛选；缺失元数据不会满足筛选，结果是有界候选。",
+    "input": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "query": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 600
+        },
+        "limit": {
+          "default": 10,
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 50
+        },
+        "sources": {
+          "minItems": 1,
+          "maxItems": 5,
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "arxiv",
+              "openreview",
+              "semantic-scholar",
+              "openalex",
+              "crossref"
+            ]
+          }
+        },
+        "since": {
+          "type": "string",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+        },
+        "until": {
+          "type": "string",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+        },
+        "sort": {
+          "default": "relevance",
+          "type": "string",
+          "enum": [
+            "relevance",
+            "date",
+            "citations"
+          ]
+        },
+        "author": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2000
+        },
+        "institution": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2000
+        },
+        "venue": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2000
+        },
+        "minCitations": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        }
+      },
+      "required": [
+        "query",
+        "limit",
+        "sort"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "paper_insight_read",
+    "description": "获取学术 URL/DOI/arXiv ID 或工作区内文件的正文与定位，不生成报告。",
+    "input": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "reference": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2000
+        },
+        "file": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2000
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "paper_insight_fetch",
+    "description": "获取并持久化论文材料；返回 key/runId，之后可离线复用材料分析。",
+    "input": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "reference": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2000
+        },
+        "file": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2000
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "paper_insight_analyze",
+    "description": "按十个模块分析并本地归档。可指定 modules 子集；传 key/runId 复用已有材料重新分析，生成新版本。耗时数分钟、有模型费用。",
+    "input": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "reference": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2000
+        },
+        "file": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2000
+        },
+        "key": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{20}$"
+        },
+        "runId": {
+          "type": "string",
+          "pattern": "^\\d+-[a-f0-9]{8}$"
+        },
+        "modules": {
+          "minItems": 1,
+          "maxItems": 10,
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "paper",
+              "first-principles",
+              "sandbox",
+              "features",
+              "products",
+              "experience",
+              "landscape",
+              "transfer",
+              "beginner",
+              "decision"
+            ]
+          }
+        },
+        "refreshResearch": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "paper_insight_resume",
+    "description": "从失败/取消检查点继续，只执行尚未完成的阶段；新建版本保留旧结果。",
+    "input": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "key": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{20}$"
+        },
+        "runId": {
+          "type": "string",
+          "pattern": "^\\d+-[a-f0-9]{8}$"
+        },
+        "refreshResearch": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "key",
+        "runId"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "paper_insight_analyze_principles",
+    "description": "仅执行 first-principles 分析模块；reference/file 导入或 key/runId 复用材料。生成独立版本。",
+    "input": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "reference": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2000
+        },
+        "file": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2000
+        },
+        "key": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{20}$"
+        },
+        "runId": {
+          "type": "string",
+          "pattern": "^\\d+-[a-f0-9]{8}$"
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "paper_insight_trace_research",
+    "description": "仅执行 landscape 分析模块；reference/file 导入或 key/runId 复用材料。生成独立版本。",
+    "input": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "reference": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2000
+        },
+        "file": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2000
+        },
+        "key": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{20}$"
+        },
+        "runId": {
+          "type": "string",
+          "pattern": "^\\d+-[a-f0-9]{8}$"
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "paper_insight_analyze_sandbox",
+    "description": "仅执行 sandbox 分析模块；reference/file 导入或 key/runId 复用材料。生成独立版本。",
+    "input": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "reference": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2000
+        },
+        "file": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2000
+        },
+        "key": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{20}$"
+        },
+        "runId": {
+          "type": "string",
+          "pattern": "^\\d+-[a-f0-9]{8}$"
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "paper_insight_generate_capabilities",
+    "description": "仅执行 features 分析模块；reference/file 导入或 key/runId 复用材料。生成独立版本。",
+    "input": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "reference": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2000
+        },
+        "file": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2000
+        },
+        "key": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{20}$"
+        },
+        "runId": {
+          "type": "string",
+          "pattern": "^\\d+-[a-f0-9]{8}$"
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "paper_insight_ideate_products",
+    "description": "仅执行 products 分析模块；reference/file 导入或 key/runId 复用材料。生成独立版本。",
+    "input": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "reference": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2000
+        },
+        "file": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2000
+        },
+        "key": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{20}$"
+        },
+        "runId": {
+          "type": "string",
+          "pattern": "^\\d+-[a-f0-9]{8}$"
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "paper_insight_optimize_experience",
+    "description": "仅执行 experience 分析模块；reference/file 导入或 key/runId 复用材料。生成独立版本。",
+    "input": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "reference": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2000
+        },
+        "file": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2000
+        },
+        "key": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{20}$"
+        },
+        "runId": {
+          "type": "string",
+          "pattern": "^\\d+-[a-f0-9]{8}$"
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "paper_insight_analyze_transfer",
+    "description": "仅执行 transfer 分析模块；reference/file 导入或 key/runId 复用材料。生成独立版本。",
+    "input": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "reference": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2000
+        },
+        "file": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2000
+        },
+        "key": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{20}$"
+        },
+        "runId": {
+          "type": "string",
+          "pattern": "^\\d+-[a-f0-9]{8}$"
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "paper_insight_explain_for_beginners",
+    "description": "仅执行 beginner 分析模块；reference/file 导入或 key/runId 复用材料。生成独立版本。",
+    "input": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "reference": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2000
+        },
+        "file": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2000
+        },
+        "key": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{20}$"
+        },
+        "runId": {
+          "type": "string",
+          "pattern": "^\\d+-[a-f0-9]{8}$"
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "paper_insight_generate_poc",
+    "description": "仅执行 decision 分析模块；reference/file 导入或 key/runId 复用材料。生成独立版本。",
+    "input": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "reference": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2000
+        },
+        "file": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2000
+        },
+        "key": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{20}$"
+        },
+        "runId": {
+          "type": "string",
+          "pattern": "^\\d+-[a-f0-9]{8}$"
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "paper_insight_batch",
+    "description": "给定论文标识逐篇分析；默认最多五篇，单篇失败继续。",
+    "input": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "references": {
+          "minItems": 1,
+          "maxItems": 20,
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2000
+          }
+        }
+      },
+      "required": [
+        "references"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "paper_insight_library",
+    "description": "查询本地历史，可按 query 检索报告全文。",
+    "input": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "query": {
+          "default": "",
+          "type": "string",
+          "maxLength": 600
+        },
+        "limit": {
+          "default": 30,
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 200
+        }
+      },
+      "required": [
+        "query",
+        "limit"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "paper_insight_report",
+    "description": "读取已有 Markdown 报告。",
+    "input": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "key": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{20}$"
+        },
+        "runId": {
+          "type": "string",
+          "pattern": "^\\d+-[a-f0-9]{8}$"
+        }
+      },
+      "required": [
+        "key",
+        "runId"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "paper_insight_export_report",
+    "description": "返回已归档 Markdown 或 JSON 报告，不重新调用模型。",
+    "input": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "key": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{20}$"
+        },
+        "runId": {
+          "type": "string",
+          "pattern": "^\\d+-[a-f0-9]{8}$"
+        },
+        "format": {
+          "default": "markdown",
+          "type": "string",
+          "enum": [
+            "markdown",
+            "json"
+          ]
+        }
+      },
+      "required": [
+        "key",
+        "runId",
+        "format"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "paper_insight_compare_papers",
+    "description": "比较 2–5 份已完成研究，保留原报告引用并生成新的比较归档。",
+    "input": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "reports": {
+          "minItems": 2,
+          "maxItems": 5,
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "key": {
+                "type": "string",
+                "pattern": "^[a-f0-9]{20}$"
+              },
+              "runId": {
+                "type": "string",
+                "pattern": "^\\d+-[a-f0-9]{8}$"
+              }
+            },
+            "required": [
+              "key",
+              "runId"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": [
+        "reports"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "paper_insight_compare_versions",
+    "description": "比较同一归档 key 的两个报告版本，返回模块差异，不调用模型。",
+    "input": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "key": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{20}$"
+        },
+        "before": {
+          "type": "string",
+          "pattern": "^\\d+-[a-f0-9]{8}$"
+        },
+        "after": {
+          "type": "string",
+          "pattern": "^\\d+-[a-f0-9]{8}$"
+        }
+      },
+      "required": [
+        "key",
+        "before",
+        "after"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "paper_insight_subscriptions",
+    "description": "读取或保存关注主题。仅保存配置；周期触发请通过 Harness 的 schedule 工具设置。",
+    "input": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "topics": {
+          "maxItems": 50,
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 600
+          }
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "paper_insight_discover_updates",
+    "description": "执行一次关注主题增量检索，保存已见指纹与发现历史；不自动调用分析，可由 Harness 定时任务调用。",
+    "input": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "topics": {
+          "minItems": 1,
+          "maxItems": 50,
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 600
+          }
+        },
+        "since": {
+          "type": "string",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+        },
+        "limit": {
+          "default": 10,
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 50
+        }
+      },
+      "required": [
+        "limit"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "paper_insight_aggregate",
+    "description": "聚合本地论文年份、研究关系图和产品机会，保留每条建议的来源，不冒充全网趋势。",
+    "input": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "limit": {
+          "default": 30,
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100
+        }
+      },
+      "required": [
+        "limit"
+      ],
+      "additionalProperties": false
+    }
+  }
+]

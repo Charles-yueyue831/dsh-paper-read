@@ -48,3 +48,14 @@ test('an exact classic title outranks newer mentions unless date order is reques
   assert.equal((await sources.search(request)).papers[0].id, 'classic');
   assert.equal((await sources.search({ ...request, sort: 'date' })).papers[0].id, 'new');
 });
+test('metadata merged from different indexes remains available to advanced filters', async () => {
+  const sources=new PaperSources({},parseConfig());
+  sources.oneSearch=async s=>[{...paper,institutions:s==='openalex'?['Example Lab']:[],citationCount:s==='openalex'?25:null}];
+  const result=await sources.search({query:'agent',sources:['arxiv','openalex'],author:'Fixture',institution:'Example Lab',minCitations:20});
+  assert.equal(result.papers.length,1); assert.equal(result.papers[0].citationCount,25);
+});
+test('Crossref imports DOI, date, affiliations and citation count', async () => {
+  const {parseCrossref}=await import('../lib/papers.js');
+  const p=parseCrossref({DOI:'10.1234/test',title:['Test'],published:{'date-parts':[[2024,3]]},author:[{given:'A',family:'B',affiliation:[{name:'Example Lab'}]}],'container-title':['Conference'],'is-referenced-by-count':9});
+  assert.equal(p.published,'2024-03-01');assert.deepEqual(p.institutions,['Example Lab']); assert.equal(p.citationCount,9);
+});

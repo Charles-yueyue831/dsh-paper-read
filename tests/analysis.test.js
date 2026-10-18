@@ -78,3 +78,21 @@ test('source selection preserves exact text and rejects invented passage IDs', a
   assert.equal(extracted.facts[0].quote, spans[0].text);
   assert.throws(() => validatePassageExtraction({ summary: 'Test', facts: [{ statement: 'Test', passageId: 'P99.S999' }] }, chunk, spans), /不存在/);
 });
+test('new sessions use pending selection or host default before a first request', () => {
+  const services = { sessionProjections: { stateOf: () => ({ pending: { provider: 'pending', model: 'selected' } }) }, agentDefaultModel: { currentSelection: () => ({ provider: 'default', model: 'fallback' }) } };
+  const ctx = { get: name => services[name] };
+  assert.equal(createHarnessModel(ctx, {agent:{session:{requestHeader:()=>undefined}}}, config).route.provider, 'pending');
+  services.sessionProjections.stateOf = () => ({});
+  assert.equal(createHarnessModel(ctx, {agent:{session:{requestHeader:()=>undefined}}}, config).route.model, 'fallback');
+});
+test('failed provider streams preserve available usage and failure telemetry', async () => {
+  const ctx = { llm: {prepareCall: async () => ({config:{}, async *stream() {yield {type:'usage',usage:{inputTokens:7}}; throw new Error('network offline');}})} };
+  const model=createHarnessModel(ctx,{}, {...config,provider:'p',model:'m'});
+  await assert.rejects(model.generate('',''), /network offline/);
+  assert.equal(model.calls.length,1); assert.equal(model.calls[0].status,'failed'); assert.equal(model.calls[0].usage.inputTokens,7);
+});
+test('tool results are lossless JSON even when optional fields are absent', async () => {
+  const tool=createTools({search:async()=>({papers:[],filters:{author:undefined},optional:undefined})})[0];
+  const output=await tool.execute({query:'agent'},{});
+  assert.deepEqual(output,JSON.parse(JSON.stringify(output))); assert.deepEqual(output.filters,{});
+});
