@@ -3,6 +3,16 @@
 生成时间：{{createdAt}} · 检索日期：{{research.retrievedAt}} · 模型：{{model}}
 来源：{{paper.url}} · 阅读范围：{{coverage}} · 分析版本：{{promptVersion}}
 
+## 重点概览
+
+**核心思想**：{{oneSentenceIdea}}
+
+**主要价值**：{{value}}
+
+**适用边界**：{{limitations}}
+
+**下一步行动**：{{technicalExperiments}}
+
 ## 阅读与证据边界
 
 {{warnings}}；未获取全文的实验和公式不得视为已验证。
@@ -63,3 +73,11 @@
 {{已检索文献与 DOI/arXiv 标识}}
 {{timeline}}
 {{relationGraph Mermaid}}
+
+## 图示交付约定（0.2.3）
+
+技术理解、沙箱、体验与行动模块：提供带证据的 visual，或说明无法可靠绘图的 visualOmission。
+visual 包含 title、caption、kind（paper-fact/inference/proposal）、evidenceIds、nodes（id/label）、edges（from/to/label）。节点 2–8 个、边 1–12 条；引用须存在，事实图必须有原文证据。程序生成 Mermaid 并插入对应章节摘要之后。
+
+显示示意：图名 → 事实/推断/方案标记 → 框架图或流程图 → 图示解释与限制 → 可跳转的证据编号。
+模板不提供虚构的研究图。Markdown 为完整便携报告；浏览器将详细解析与附录折叠，不删减导出文件。

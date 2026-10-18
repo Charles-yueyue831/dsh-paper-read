@@ -94,3 +94,10 @@ Web 插件通过实际 `webServer.register({kind:"prefix",path,handler})` 注册
 `reference` 新增完整标题输入：检索真实学术来源并只自动选取唯一完全匹配标题。`PAPER_SELECTION_REQUIRED` 错误包含 `candidates`，Web 展示候选；没有来源时明确失败。`INVALID_REFERENCE` 拒绝空输入及旧错误提示，不新增运行记录。错误对象的 key/runId 使用结构化字段，用户不需要复制进输入框。Web 不再无条件宣称已经取得材料。
 
 旧版无 checkpoint 但有 document.json 的记录可复用正文；若材料和输入都缺失，给出重新填写论文信息的说明。名称备注仅影响历史管理，不改动论文事实或既有报告。归档不要同时交由多个 Harness 进程写入；运行中保护和编辑串行化在单个宿主进程内生效。
+
+
+## 0.2.3 图文报告
+
+工具名称及参数不变。`report.json` 保持 `schemaVersion: 2`，`promptVersion: "0.2.3"`。
+章节新增可选 `visual` 与 `visualOmission`，不能同时存在。`visual` 包含 `title`、`caption`、`kind`（paper-fact/inference/proposal）、`evidenceIds`、`nodes: [{id,label}]`、`edges: [{from,to,label}]`。2–8 个节点、1–12 条边；未知节点或引用会触发已有的一次结构修复。
+新生成的 paper/sandbox/experience/decision 模块要求图示或至少 10 字的证据不足说明，其余模块保持原结构。图示不额外调用模型，引用编号校验不代表已验证语义蕴含。旧报告字段仍然兼容，读取不自动迁移磁盘文件。

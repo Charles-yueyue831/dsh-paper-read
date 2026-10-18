@@ -29,6 +29,35 @@
     mod
   ));
 
+  // client/reading-style.js
+  var readingStyle = `
+.pi-report-card{grid-column:1/-1;min-width:0}
+.pi-reading-layout{display:grid;grid-template-columns:190px minmax(0,1fr);gap:clamp(22px,4vw,56px);align-items:start;max-width:1240px;margin:auto}
+.pi-reading-nav{position:sticky;top:16px;max-height:calc(100vh - 60px);overflow:auto;border-right:1px solid var(--dsw-alias-border-l2,#ddd);padding-right:18px}
+.pi-nav-group{margin:0 0 20px}.pi-nav-group strong{display:block;font-size:12px;opacity:.65;margin-bottom:5px}
+.pi-workbench .pi-nav-group button{display:block;border:0;background:transparent;text-align:left;width:100%;font-size:13px;padding:6px 8px;border-radius:6px}
+.pi-workbench .pi-nav-group button:hover,.pi-workbench .pi-nav-group button:focus-visible{background:var(--dsw-alias-bg-layer-3);color:#638cf0}
+.pi-report-body{min-width:0;width:100%;max-width:960px;margin:0 auto;font-size:16px;line-height:1.85}
+.pi-report-body>div>h1,.pi-report-body h1{font-size:clamp(24px,3vw,36px);line-height:1.3;letter-spacing:-.7px;margin:12px 0 24px}
+.pi-report-body .pi-chapter{padding:28px 0;border-top:1px solid var(--dsw-alias-border-l2,#ddd);margin-top:30px}
+.pi-report-body .pi-chapter h2{border:0;padding:0;margin:0 0 18px;font-size:25px;line-height:1.4}
+.pi-report-body .pi-eyebrow,.pi-reading-nav .pi-eyebrow{font-size:11px;letter-spacing:1px;color:#7297ed;font-weight:650;margin:0 0 9px}
+.pi-report-body .pi-overview{padding:24px;border:1px solid var(--dsw-alias-border-l2,#ddd);border-radius:14px;background:var(--dsw-alias-bg-layer-1)}
+.pi-overview blockquote{font-size:14px;border-color:#638cf0}.pi-overview p{margin:10px 0}
+.pi-deep-dive,.pi-appendix{margin:24px 0;border:1px solid var(--dsw-alias-border-l2,#ddd);border-radius:10px;background:var(--dsw-alias-bg-layer-1)}
+.pi-deep-dive>summary,.pi-appendix>summary{padding:14px 18px;font-size:14px;font-weight:600;cursor:pointer}
+.pi-detail-block{padding:0 22px 18px}.pi-detail-block+.pi-detail-block{border-top:1px solid var(--dsw-alias-border-l2,#ddd)}
+.pi-appendix>div,.pi-appendix>.pi-deep-dive{margin:16px}
+.pi-report-body .pi-detail-block h3{font-size:17px;margin:18px 0 10px}
+.pi-report-body [id]{scroll-margin-top:24px}.pi-report-body table{font-size:14px;line-height:1.7}.pi-report-body th,.pi-report-body td{min-width:150px;padding:12px;vertical-align:top}
+.pi-report-body .pi-diagram{background:var(--dsw-alias-bg-layer-1);margin:20px 0;padding:14px}
+.pi-diagram-svg svg{max-width:100%;min-width:0;width:100%;height:auto;max-height:620px;margin:auto}.pi-diagram-svg{max-height:760px;overflow:auto}
+.pi-diagram-zoom svg{max-width:none;max-height:none;width:auto;min-width:100%}.pi-diagram>button{margin-top:12px;font-size:12px}
+.pi-report-toolbar{padding-bottom:16px;border-bottom:1px solid var(--dsw-alias-border-l2,#ddd)}.pi-report-toolbar .pi-actions{margin-top:0}
+@media(max-width:1000px){.pi-reading-layout{grid-template-columns:1fr}.pi-reading-nav{position:static;max-height:none;border:0;padding:0;display:flex;flex-wrap:wrap;gap:12px}.pi-reading-nav>.pi-eyebrow{width:100%}.pi-nav-group{flex:1 1 140px;margin:0}.pi-report-body{max-width:100%}}
+@media(max-width:600px){.pi-report-card{padding:14px}.pi-report-body{font-size:15px}.pi-report-body .pi-overview{padding:16px}.pi-report-body .pi-chapter h2{font-size:22px}.pi-report-toolbar button{font-size:12px;padding:6px 9px}}
+`;
+
   // client/report-utils.js
   function splitReport(text) {
     const parts = [];
@@ -112,9 +141,75 @@
     return source;
   }
 
+  // lib/report-format.js
+  var readingGroups = ["\u5148\u770B\u91CD\u70B9", "\u7406\u89E3\u6280\u672F", "\u7814\u7A76\u4F9D\u636E", "\u4EA7\u54C1\u5E94\u7528", "\u9A8C\u8BC1\u884C\u52A8", "\u8BC1\u636E\u4E0E\u8D44\u6599"];
+  var modulePresentation = {
+    paper: ["\u7406\u89E3\u6280\u672F", "\u8FD9\u9879\u6280\u672F\u5982\u4F55\u5DE5\u4F5C", "\u8BBA\u6587\u4E0E\u6280\u672F\u89E3\u6790"],
+    "first-principles": ["\u7406\u89E3\u6280\u672F", "\u5B83\u6539\u53D8\u4E86\u4EC0\u4E48\u5173\u952E\u6743\u8861", "\u7B2C\u4E00\u6027\u539F\u7406\u4E0E\u4E3B\u8981\u6B21\u8981\u77DB\u76FE"],
+    beginner: ["\u7406\u89E3\u6280\u672F", "\u7528\u4E00\u4E2A\u4F8B\u5B50\u7406\u89E3\u5B83", "\u96F6\u57FA\u7840\u89E3\u91CA\u4E0E\u4EA7\u54C1\u793A\u4F8B"],
+    landscape: ["\u7814\u7A76\u4F9D\u636E", "\u8FD9\u9879\u7814\u7A76\u4ECE\u54EA\u91CC\u6765", "\u7814\u7A76\u73B0\u72B6\u3001\u53C2\u8003\u6587\u732E\u4E0E\u7814\u7A76\u8109\u7EDC"],
+    sandbox: ["\u4EA7\u54C1\u5E94\u7528", "\u5982\u4F55\u7528\u4E8E Agent \u6C99\u7BB1", "Agent \u6C99\u7BB1\u7684\u5173\u7CFB\u4E0E\u843D\u5730"],
+    features: ["\u4EA7\u54C1\u5E94\u7528", "\u53EF\u4EE5\u505A\u6210\u54EA\u4E9B\u529F\u80FD", "\u73B0\u6709\u4EA7\u54C1\u7684\u65B0\u529F\u80FD\u4E0E\u80FD\u529B"],
+    products: ["\u4EA7\u54C1\u5E94\u7528", "\u6709\u54EA\u4E9B\u65B0\u4EA7\u54C1\u673A\u4F1A", "\u65B0\u4EA7\u54C1\u673A\u4F1A"],
+    experience: ["\u4EA7\u54C1\u5E94\u7528", "\u7528\u6237\u4F53\u9A8C\u4F1A\u600E\u6837\u6539\u53D8", "\u4EA7\u54C1\u4F53\u9A8C\u6539\u8FDB"],
+    transfer: ["\u4EA7\u54C1\u5E94\u7528", "\u8FD8\u80FD\u8FC1\u79FB\u5230\u54EA\u4E9B\u573A\u666F", "\u8DE8\u9886\u57DF\u6280\u672F\u8FC1\u79FB"],
+    decision: ["\u9A8C\u8BC1\u884C\u52A8", "\u4E0B\u4E00\u6B65\u503C\u5F97\u505A\u4EC0\u4E48", "\u9A8C\u8BC1\u8BA1\u5212\u4E0E\u884C\u52A8\u5EFA\u8BAE"]
+  };
+  var fieldLabels = Object.fromEntries(`background:\u7814\u7A76\u80CC\u666F|problem:\u8981\u89E3\u51B3\u7684\u95EE\u9898|oneSentenceIdea:\u4E00\u53E5\u8BDD\u7406\u89E3|mechanism:\u5173\u952E\u673A\u5236|inputProcessOutput:\u8F93\u5165\u3001\u5904\u7406\u4E0E\u8F93\u51FA|innovation:\u771F\u6B63\u7684\u65B0\u610F|experiments:\u5B9E\u9A8C\u4E0E\u5BF9\u7167|conditions:\u6210\u7ACB\u6761\u4EF6|limitations:\u5C40\u9650|value:\u6280\u672F\u4EF7\u503C|beginnerVersion:\u96F6\u57FA\u7840\u7406\u89E3|productManagerVersion:\u4EA7\u54C1\u89C6\u89D2|engineeringVersion:\u5DE5\u7A0B\u89C6\u89D2|formulas:\u516C\u5F0F\u7684\u542B\u4E49|fundamentalGoal:\u6839\u672C\u76EE\u6807|constraints:\u5BA2\u89C2\u7EA6\u675F|primaryContradiction:\u4E3B\u8981\u77DB\u76FE\u53CA\u4F9D\u636E|secondaryContradictions:\u6B21\u8981\u77DB\u76FE|existingSolution:\u65E2\u6709\u89E3\u6CD5|newMechanism:\u65B0\u7684\u89E3\u6CD5|costAndBoundary:\u4EE3\u4EF7\u4E0E\u8FB9\u754C|newContradiction:\u5F15\u5165\u7684\u65B0\u77DB\u76FE|simplerAlternatives:\u66F4\u7B80\u5355\u7684\u66FF\u4EE3\u65B9\u6848|applicability:\u9002\u7528\u7A0B\u5EA6|relatedLayer:\u5BF9\u5E94\u7684\u7CFB\u7EDF\u5C42\u6B21|traditionalApproach:\u4F20\u7EDF\u505A\u6CD5|integrationChanges:\u9700\u8981\u6539\u53D8\u7684\u7EC4\u4EF6|interfacesAndResources:\u63A5\u53E3\u4E0E\u8D44\u6E90|metrics:\u5982\u4F55\u8861\u91CF\u6548\u679C|risks:\u98CE\u9669|horizon:\u9002\u5408\u4F55\u65F6\u63A8\u8FDB|technicalCapability:\u6280\u672F\u80FD\u505A\u5230\u4EC0\u4E48|productCapability:\u4EA7\u54C1\u80FD\u7A33\u5B9A\u4EA4\u4ED8\u4EC0\u4E48|userRole:\u76EE\u6807\u7528\u6237|scenario:\u4F7F\u7528\u573A\u666F|painPoint:\u5BA2\u6237\u75DB\u70B9|requirement:\u9700\u6C42\u5B9A\u4E49|featureDesign:\u529F\u80FD\u4E0E\u4EA4\u4E92|implementation:\u5B9E\u73B0\u65B9\u5F0F|benefits:\u9884\u671F\u6536\u76CA|cost:\u5B9E\u73B0\u6210\u672C|priority:\u4F18\u5148\u7EA7|name:\u4EA7\u54C1\u540D\u79F0|concept:\u4EA7\u54C1\u6982\u5FF5|users:\u9762\u5411\u8C01|capabilities:\u5173\u952E\u80FD\u529B|mvp:\u6700\u5C0F\u53EF\u7528\u4EA7\u54C1|businessHypothesis:\u5546\u4E1A\u5047\u8BBE|technologyNecessity:\u662F\u5426\u5FC5\u987B\u4F7F\u7528\u8FD9\u9879\u6280\u672F|feasibilityStatus:\u53EF\u884C\u6027\u4E0E\u8BC1\u636E|beforeJourney:\u4F18\u5316\u524D\u7684\u7528\u6237\u65C5\u7A0B|afterJourney:\u4F18\u5316\u540E\u7684\u7528\u6237\u65C5\u7A0B|usability:\u6613\u7528\u6027|efficiency:\u6548\u7387|reliability:\u53EF\u9760\u6027|transparency:\u53EF\u7406\u89E3\u6027|control:\u5BF9\u7167\u4E0E\u63A7\u5236|trust:\u4FE1\u4EFB\u4E0E\u5B89\u5168\u611F|automation:\u81EA\u52A8\u5316|guardrails:\u4E0D\u80FD\u727A\u7272\u7684\u6307\u6807|retrievalDate:\u68C0\u7D22\u622A\u81F3\u65E5\u671F|origins:\u6280\u672F\u8D77\u6E90|milestones:\u5173\u952E\u91CC\u7A0B\u7891|routes:\u4E0D\u540C\u6280\u672F\u8DEF\u7EBF|breakthroughs:\u5173\u952E\u7A81\u7834|currentState:\u5F53\u524D\u7814\u7A76\u72B6\u6001|verifiedProgress:\u5DF2\u9A8C\u8BC1\u7684\u8FDB\u5C55|hypothesizedTrends:\u5F85\u9A8C\u8BC1\u7684\u8D8B\u52BF|evidenceGaps:\u8BC1\u636E\u7F3A\u53E3|reusableMechanism:\u53EF\u590D\u7528\u7684\u673A\u5236|sourceDomain:\u539F\u59CB\u573A\u666F|targetDomain:\u76EE\u6807\u573A\u666F|similarities:\u76F8\u540C\u7684\u95EE\u9898\u7ED3\u6784|differences:\u5173\u952E\u5DEE\u5F02|adaptation:\u8FC1\u79FB\u9700\u8981\u7684\u6539\u52A8|lossAndCost:\u80FD\u529B\u635F\u5931\u4E0E\u6210\u672C|experiment:\u6700\u5C0F\u9A8C\u8BC1\u5B9E\u9A8C|nonTransferConditions:\u4F55\u65F6\u4E0D\u80FD\u8FC1\u79FB|concreteProblem:\u4ECE\u4E00\u4E2A\u5177\u4F53\u95EE\u9898\u5F00\u59CB|intuition:\u76F4\u89C9\u7406\u89E3|traditionalAnalogy:\u4F20\u7EDF\u65B9\u6CD5\u7684\u7C7B\u6BD4|traditionalLimits:\u4F20\u7EDF\u65B9\u5F0F\u7684\u5C40\u9650|newIdea:\u65B0\u7684\u601D\u8DEF|workedExample:\u4E00\u6B65\u6B65\u770B\u4F8B\u5B50|concepts:\u5FC5\u8981\u6982\u5FF5|productExamples:\u4EA7\u54C1\u4E0E\u529F\u80FD\u6848\u4F8B|limits:\u7C7B\u6BD4\u4E0E\u6280\u672F\u7684\u8FB9\u754C|learningPath:\u7EE7\u7EED\u5B66\u4E60|furtherReading:\u503C\u5F97\u7EE7\u7EED\u9605\u8BFB|technicalExperiments:\u503C\u5F97\u9A8C\u8BC1\u7684\u6280\u672F|sandboxRoadmap:\u6C99\u7BB1\u80FD\u529B\u89C4\u5212|prototypeFeatures:\u503C\u5F97\u505A\u7684\u529F\u80FD\u539F\u578B|productResearch:\u5F85\u8C03\u7814\u7684\u4EA7\u54C1\u673A\u4F1A|doNotAdopt:\u6682\u4E0D\u5EFA\u8BAE\u91C7\u7528|valueFeasibilityCostRiskEvidence:\u4EF7\u503C\u3001\u6210\u672C\u4E0E\u8BC1\u636E\u8BC4\u4F30|hypothesis:\u8981\u9A8C\u8BC1\u7684\u5047\u8BBE|steps:\u5B9E\u9A8C\u6B65\u9AA4|resources:\u5FC5\u8981\u8D44\u6E90|successCriteria:\u6210\u529F\u6807\u51C6|stopConditions:\u505C\u6B62\u6761\u4EF6`.split("|").map((x) => x.split(":")));
+  function sectionPresentation(title) {
+    for (const [id, [group, label, legacy]] of Object.entries(modulePresentation)) {
+      if (title === label || title === legacy) return { id, group, label };
+    }
+    if (/重点概览|阅读与证据边界/.test(title)) return { group: "\u5148\u770B\u91CD\u70B9", label: title };
+    if (/研究时间线/.test(title)) return { group: "\u7814\u7A76\u4F9D\u636E", label: title };
+    if (/原文证据|文献索引|来源缺口/.test(title)) return { group: "\u8BC1\u636E\u4E0E\u8D44\u6599", label: title };
+    return { group: "\u6DF1\u5165\u9605\u8BFB", label: title };
+  }
+
+  // client/reading-model.js
+  function splitHeadings(text, level) {
+    const result = [{ title: "", text: "" }];
+    let fence;
+    for (const line of text.match(/[^\n]*\n|[^\n]+$/g) || []) {
+      const f = line.match(/^ {0,3}(`{3,}|~{3,})([^\r\n]*)\r?\n?$/);
+      if (f) {
+        if (!fence && !(f[1][0] === "`" && f[2].includes("`"))) fence = { char: f[1][0], length: f[1].length };
+        else if (fence && f[1][0] === fence.char && f[1].length >= fence.length && !f[2].trim()) fence = null;
+        result.at(-1).text += line;
+        continue;
+      }
+      const match = !fence && line.match(new RegExp(`^ {0,3}#{${level}}[ \\t]+(.+?)[ \\t]*#*[ \\t]*\\r?\\n?$`));
+      if (match) result.push({ title: match[1].trim(), text: "" });
+      else result.at(-1).text += line;
+    }
+    return result;
+  }
+  function readingModel(text) {
+    const [intro, ...sections] = splitHeadings(text, 2);
+    const used = /* @__PURE__ */ new Map();
+    const unique = (title) => {
+      const slug = headingSlug(title), n = used.get(slug) || 0;
+      used.set(slug, n + 1);
+      return slug + (n ? "-" + n : "");
+    };
+    const chapters = sections.map((section) => {
+      const presentation = sectionPresentation(section.title);
+      const [lead, ...details] = splitHeadings(section.text, 3);
+      return {
+        ...presentation,
+        anchor: unique(section.title),
+        sourceTitle: section.title,
+        lead: lead.text,
+        details: details.map((detail) => ({ ...detail, anchor: unique(detail.title), label: fieldLabels[detail.title] || detail.title }))
+      };
+    });
+    const groups = [...readingGroups, "\u6DF1\u5165\u9605\u8BFB"].map((label) => ({ label, chapters: chapters.filter((ch) => ch.group === label) })).filter((g) => g.chapters.length);
+    return { intro: intro.text, chapters, groups };
+  }
+
   // client/report-view.js
   var diagramModule;
-  var loadDiagram = () => diagramModule ||= import("/api/paper-insight/assets/diagram.js?v=0.2.2").catch((error) => {
+  var loadDiagram = () => diagramModule ||= import("/api/paper-insight/assets/diagram.js?v=0.2.3").catch((error) => {
     diagramModule = null;
     throw error;
   });
@@ -134,7 +229,7 @@
     const h = React.createElement;
     const { useState, useEffect, useRef, useMemo, useId } = React;
     function Diagram({ source }) {
-      const [svg, setSvg] = useState(""), [error, setError] = useState("");
+      const [svg, setSvg] = useState(""), [error, setError] = useState(""), [zoom, setZoom] = useState(false);
       useEffect(() => {
         let active = true;
         setSvg("");
@@ -157,9 +252,10 @@
         "figure",
         { className: "pi-diagram", "aria-label": "\u7814\u7A76\u5173\u7CFB\u56FE" },
         error ? h("p", { className: "pi-error", role: "status" }, error) : svg ? h("div", {
-          className: "pi-diagram-svg",
+          className: "pi-diagram-svg" + (zoom ? " pi-diagram-zoom" : ""),
           dangerouslySetInnerHTML: { __html: svg }
         }) : h("p", { role: "status" }, "\u6B63\u5728\u7ED8\u5236\u56FE\u8868\u2026"),
+        svg ? h("button", { type: "button", "aria-pressed": zoom, onClick: () => setZoom(!zoom) }, zoom ? "\u9002\u5E94\u9875\u9762" : "\u653E\u5927\u56FE\u8868") : null,
         h(
           "details",
           { open: error ? true : void 0 },
@@ -169,39 +265,57 @@
       );
     }
     return function ReportView({ text, onDownload }) {
-      const [view, setView] = useState("read"), [toc, setToc] = useState([]);
+      const [view, setView] = useState("read");
       const root = useRef(null);
       const prefix = "pi-report-" + useId().replace(/[^a-zA-Z0-9-]/g, "");
-      const parts = useMemo(() => splitReport(text), [text]);
+      const model = useMemo(() => readingModel(text), [text]);
       useEffect(() => {
         setView("read");
       }, [text]);
       useEffect(() => {
         if (view !== "read" || !root.current) return;
-        const seen = /* @__PURE__ */ new Map();
-        const items = [];
-        for (const heading of root.current.querySelectorAll(
-          "h1,h2,h3,h4,h5,h6"
-        )) {
-          const slug = headingSlug(heading.textContent);
-          const count = seen.get(slug) || 0;
-          seen.set(slug, count + 1);
-          heading.id = prefix + "-" + slug + (count ? "-" + count : "");
+        const occupied = new Set([...root.current.querySelectorAll("[id]")].map((e) => e.id));
+        for (const heading of root.current.querySelectorAll("h1,h2,h3,h4,h5,h6")) {
+          if (heading.id) continue;
+          const base = prefix + "-" + headingSlug(heading.textContent);
+          let id = base, n = 1;
+          while (occupied.has(id)) id = base + "-" + n++;
+          heading.id = id;
           heading.tabIndex = -1;
-          if (heading.tagName === "H2")
-            items.push({ id: heading.id, label: heading.textContent });
+          occupied.add(id);
         }
-        setToc(items);
       }, [text, view, prefix]);
       const jump = (id) => {
         const target = root.current && [...root.current.querySelectorAll("[id]")].find((e) => e.id === id);
-        if (target) {
-          target.scrollIntoView({ block: "start" });
-          target.focus({ preventScroll: true });
-          return true;
+        if (!target) return false;
+        for (let parent = target.parentElement; parent && parent !== root.current; parent = parent.parentElement) {
+          if (parent.tagName === "DETAILS") parent.open = true;
         }
-        return false;
+        if (target.tagName === "DETAILS") target.open = true;
+        target.scrollIntoView({ block: "start" });
+        target.focus({ preventScroll: true });
+        return true;
       };
+      const markdown = (text2, key) => h(React.Fragment, { key }, ...splitReport(text2).map((part, i) => part.type === "mermaid" ? h(Diagram, { key: i, source: part.text }) : h(MarkdownText, { key: i, text: reportLinks(part.text, window.location.origin + window.location.pathname, prefix), labels: markdownLabels })));
+      const expand = (open) => {
+        for (const item of root.current?.querySelectorAll(".pi-deep-dive,.pi-appendix") || []) item.open = open;
+      };
+      const chapterBody = (chapter) => h(
+        React.Fragment,
+        null,
+        markdown(chapter.lead, "lead"),
+        chapter.details.length ? h(
+          "details",
+          { className: "pi-deep-dive" },
+          h("summary", null, `\u6DF1\u5165\u89E3\u8BFB\u4E0E\u4F9D\u636E \xB7 ${chapter.details.length} \u9879`),
+          ...chapter.details.map((detail) => h(
+            "section",
+            { key: detail.anchor, className: "pi-detail-block" },
+            h("h3", { id: prefix + "-" + detail.anchor, tabIndex: -1 }, detail.label),
+            markdown(detail.text, detail.anchor)
+          ))
+        ) : null
+      );
       return h(
         "section",
         { className: "pi-report", "aria-label": "\u7814\u7A76\u62A5\u544A" },
@@ -211,81 +325,59 @@
           h(
             "div",
             { role: "group", "aria-label": "\u62A5\u544A\u663E\u793A\u65B9\u5F0F" },
-            h(
-              "button",
-              {
-                type: "button",
-                "aria-pressed": view === "read",
-                onClick: () => setView("read")
-              },
-              "\u9605\u8BFB"
-            ),
-            h(
-              "button",
-              {
-                type: "button",
-                "aria-pressed": view === "source",
-                onClick: () => setView("source")
-              },
-              "Markdown \u6E90\u7801"
-            )
+            ...[["read", "\u9605\u8BFB"], ["source", "Markdown \u6E90\u7801"]].map(([id, label]) => h("button", { key: id, type: "button", "aria-pressed": view === id, onClick: () => setView(id) }, label))
           ),
-          h("button", { type: "button", onClick: onDownload }, "\u4E0B\u8F7D Markdown")
-        ),
-        view === "read" && toc.length ? h(
-          "details",
-          { className: "pi-report-toc" },
-          h("summary", null, "\u7AE0\u8282\u76EE\u5F55"),
           h(
-            "nav",
-            { "aria-label": "\u62A5\u544A\u7AE0\u8282" },
-            ...toc.map(
-              (item) => h(
-                "button",
-                {
-                  key: item.id,
-                  type: "button",
-                  onClick: () => jump(item.id)
-                },
-                item.label
-              )
-            )
+            "div",
+            { className: "pi-actions" },
+            view === "read" ? h("button", { type: "button", onClick: () => expand(true) }, "\u5C55\u5F00\u5168\u90E8\u7EC6\u8282") : null,
+            view === "read" ? h("button", { type: "button", onClick: () => expand(false) }, "\u53EA\u770B\u91CD\u70B9") : null,
+            h("button", { type: "button", onClick: onDownload }, "\u4E0B\u8F7D Markdown")
           )
-        ) : null,
-        view === "source" ? h(
-          "pre",
-          { className: "pi-report-source", "aria-label": "\u7814\u7A76\u62A5\u544A\u6E90\u7801" },
-          text
-        ) : h(
-          "article",
-          {
-            className: "pi-report-body",
-            ref: root,
-            "aria-label": "\u7814\u7A76\u62A5\u544A\u5185\u5BB9",
-            onClickCapture: (event) => {
-              const a = event.target.closest?.("a[href]");
-              if (!a) return;
-              const url = new URL(a.href, window.location.href);
-              if (url.origin === window.location.origin && url.pathname === window.location.pathname && url.hash.startsWith("#" + prefix + "-")) {
-                event.preventDefault();
-                event.stopPropagation();
-                try {
-                  jump(decodeURIComponent(url.hash.slice(1)));
-                } catch {
+        ),
+        view === "source" ? h("pre", { className: "pi-report-source", "aria-label": "\u7814\u7A76\u62A5\u544A\u6E90\u7801" }, text) : h(
+          "div",
+          { className: "pi-reading-layout" },
+          model.chapters.length ? h(
+            "nav",
+            { className: "pi-reading-nav", "aria-label": "\u62A5\u544A\u7AE0\u8282" },
+            h("p", { className: "pi-eyebrow" }, "\u9605\u8BFB\u8DEF\u7EBF"),
+            ...model.groups.map((group) => h(
+              "div",
+              { key: group.label, className: "pi-nav-group" },
+              h("strong", null, group.label),
+              ...group.chapters.map((ch) => h("button", { type: "button", key: ch.anchor, onClick: () => jump(prefix + "-" + ch.anchor) }, ch.label))
+            ))
+          ) : null,
+          h(
+            "article",
+            {
+              className: "pi-report-body",
+              ref: root,
+              "aria-label": "\u7814\u7A76\u62A5\u544A\u5185\u5BB9",
+              key: text,
+              onClickCapture: (event) => {
+                const a = event.target.closest?.("a[href]");
+                if (!a) return;
+                const url = new URL(a.href, window.location.href);
+                if (url.origin === window.location.origin && url.pathname === window.location.pathname && url.hash.startsWith("#" + prefix + "-")) {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  try {
+                    jump(decodeURIComponent(url.hash.slice(1)));
+                  } catch {
+                  }
                 }
               }
-            }
-          },
-          ...parts.map(
-            (part, i) => part.type === "mermaid" ? h(Diagram, { key: i, source: part.text }) : h(MarkdownText, {
-              key: i,
-              text: reportLinks(
-                part.text,
-                window.location.origin + window.location.pathname,
-                prefix
-              ),
-              labels: markdownLabels
-            })
+            },
+            markdown(model.intro, "intro"),
+            ...model.groups.flatMap((group) => group.chapters.map((ch) => ch.group === "\u8BC1\u636E\u4E0E\u8D44\u6599" ? h("details", { key: ch.anchor, className: "pi-appendix", id: prefix + "-" + ch.anchor, tabIndex: -1 }, h("summary", null, ch.label), chapterBody(ch)) : h(
+              "section",
+              { key: ch.anchor, className: "pi-chapter" + (ch.group === "\u5148\u770B\u91CD\u70B9" ? " pi-overview" : "") },
+              h("p", { className: "pi-eyebrow" }, ch.group),
+              h("h2", { id: prefix + "-" + ch.anchor, tabIndex: -1 }, ch.label),
+              chapterBody(ch)
+            )))
           )
         )
       );
@@ -421,6 +513,7 @@
         return value;
       }
       function Workbench() {
+        const reportAnchor = useRef(null);
         const [sessions, setSessions] = useState([]), [session, setSession] = useState(""), [query, setQuery] = useState(""), [reference, setReference] = useState(""), [local, setLocal] = useState(false), [modules, setModules] = useState(Object.keys(labels)), [papers, setPapers] = useState([]), [runs, setRuns] = useState([]), [selected, setSelected] = useState([]), [historyQuery, setHistoryQuery] = useState(""), [historyStatus, setHistoryStatus] = useState(""), [deleted, setDeleted] = useState(false), [offset, setOffset] = useState(0), [total, setTotal] = useState(0), [detail, setDetail] = useState(null), [submitting, setSubmitting] = useState(false), [report, setReport] = useState(""), [status, setStatus] = useState("\u9009\u62E9\u4F1A\u8BDD\u4EE5\u4F7F\u7528\u5BF9\u5E94\u5DE5\u4F5C\u533A\u4E0E\u6A21\u578B\u3002"), [error, setError] = useState(""), [job, setJob] = useState(null), [topics, setTopics] = useState(""), [advanced, setAdvanced] = useState({
           author: "",
           venue: "",
@@ -550,6 +643,9 @@
             clearTimeout(timer);
           };
         }, [job]);
+        useEffect(() => {
+          if (report) reportAnchor.current?.scrollIntoView({ block: "start" });
+        }, [report]);
         const run = async (action, args = {}) => {
           if (submitLock.current) return;
           setError("");
@@ -876,31 +972,31 @@
                     setOffset(offset + 20);
                     run("library", historyArgs(offset + 20));
                   }) : null
-                ),
-                h(
-                  "section",
-                  { className: "pi-card" },
-                  h("h2", null, "\u7814\u7A76\u62A5\u544A"),
-                  report ? h(ReportView, {
-                    text: report,
-                    onDownload: () => {
-                      const url = URL.createObjectURL(
-                        new Blob([report], {
-                          type: "text/markdown;charset=utf-8"
-                        })
-                      );
-                      const a = document.createElement("a");
-                      a.href = url;
-                      a.download = "paper-research.md";
-                      a.click();
-                      setTimeout(() => URL.revokeObjectURL(url), 1e3);
-                    }
-                  }) : h(
-                    "p",
-                    null,
-                    "\u5B8C\u6210\u5206\u6790\u6216\u9009\u62E9\u5386\u53F2\u62A5\u544A\u540E\uFF0C\u5185\u5BB9\u5C06\u663E\u793A\u5728\u8FD9\u91CC\u3002"
-                  )
                 )
+              )
+            ),
+            h(
+              "section",
+              { className: "pi-card pi-report-card", ref: reportAnchor },
+              h("h2", null, "\u7814\u7A76\u62A5\u544A"),
+              report ? h(ReportView, {
+                text: report,
+                onDownload: () => {
+                  const url = URL.createObjectURL(
+                    new Blob([report], {
+                      type: "text/markdown;charset=utf-8"
+                    })
+                  );
+                  const a = document.createElement("a");
+                  a.href = url;
+                  a.download = "paper-research.md";
+                  a.click();
+                  setTimeout(() => URL.revokeObjectURL(url), 1e3);
+                }
+              }) : h(
+                "p",
+                null,
+                "\u5B8C\u6210\u5206\u6790\u6216\u9009\u62E9\u5386\u53F2\u62A5\u544A\u540E\uFF0C\u5185\u5BB9\u5C06\u663E\u793A\u5728\u8FD9\u91CC\u3002"
               )
             )
           )
@@ -911,7 +1007,7 @@
         apply(ctx) {
           ctx.effect(() => {
             const style = document.createElement("style");
-            style.textContent = css;
+            style.textContent = css + readingStyle;
             document.head.appendChild(style);
             return () => style.remove();
           });

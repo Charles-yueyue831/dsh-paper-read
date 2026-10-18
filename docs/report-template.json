@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "promptVersion": "0.2.0",
+  "promptVersion": "0.2.3",
   "sections": [
     {
       "id": "paper",
@@ -30,7 +30,8 @@
           "implication": "含义",
           "validation": "验证方法及条件"
         }
-      ]
+      ],
+      "visualOmission": "此为格式模板，尚无真实论文证据，因此不生成机制图。"
     },
     {
       "id": "first-principles",
@@ -79,7 +80,8 @@
           "implication": "含义",
           "validation": "验证方法及条件"
         }
-      ]
+      ],
+      "visualOmission": "此为格式模板，尚无真实论文证据，因此不生成机制图。"
     },
     {
       "id": "features",
@@ -164,7 +166,8 @@
           "implication": "含义",
           "validation": "验证方法及条件"
         }
-      ]
+      ],
+      "visualOmission": "此为格式模板，尚无真实论文证据，因此不生成机制图。"
     },
     {
       "id": "landscape",
@@ -271,7 +274,8 @@
           "implication": "含义",
           "validation": "验证方法及条件"
         }
-      ]
+      ],
+      "visualOmission": "此为格式模板，尚无真实论文证据，因此不生成机制图。"
     }
   ]
 }

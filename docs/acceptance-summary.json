@@ -158,5 +158,49 @@
       "related references and citations unavailable for this newly indexed paper"
     ],
     "scope": "One sandbox module, two of nine text chunks; a workflow regression test, not a full-paper ten-module review."
+  },
+  "visualReportPatch": {
+    "version": "0.2.3",
+    "date": "2026-10-18",
+    "unitTests": 70,
+    "host": {
+      "tools": 27,
+      "calls": 6,
+      "synthetic": true
+    },
+    "live": {
+      "paper": "https://arxiv.org/abs/2210.03629v3",
+      "runId": "1792335770859-c6506764",
+      "modelCalls": 4,
+      "modules": [
+        "paper",
+        "sandbox",
+        "experience",
+        "decision"
+      ],
+      "coverage": "partial-text",
+      "selection": {
+        "totalChunks": 9,
+        "selectedChunks": 2
+      },
+      "analysisDiagrams": 4
+    },
+    "renderContinuation": {
+      "runId": "1792335998548-e28dd7ea",
+      "modelCalls": 0,
+      "sectionsUnchanged": true
+    },
+    "browser": {
+      "svgCount": 5,
+      "diagramErrors": 0,
+      "encodedLabelArtifacts": 0,
+      "sourceMatchesFile": true,
+      "oldReportCompatible": true,
+      "citationUnfoldAndFocus": true,
+      "expandCollapse": true,
+      "zoom": true,
+      "unsafeDiagramFallback": true
+    },
+    "packedInstallTests": 70
   }
 }

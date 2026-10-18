@@ -1,3 +1,4 @@
+import { readingStyle } from "./reading-style.js";
 import { createReportView } from "./report-view.js";
 import { createHistoryView, statusLabels, stageLabels, explainFailure } from "./history-view.js";
 /* Native Harness client module; React is supplied by the host to avoid duplicate runtimes. */
@@ -39,6 +40,7 @@ window.__ModuleLoader__.load({
       return value;
     }
     function Workbench() {
+      const reportAnchor = useRef(null);
       const [sessions, setSessions] = useState([]),
         [session, setSession] = useState(""),
         [query, setQuery] = useState(""),
@@ -177,6 +179,9 @@ window.__ModuleLoader__.load({
           clearTimeout(timer);
         };
       }, [job]);
+      useEffect(() => {
+        if (report) reportAnchor.current?.scrollIntoView({block:'start'});
+      }, [report]);
       const run = async (action, args = {}) => {
         if (submitLock.current) return;
         setError("");
@@ -487,9 +492,11 @@ window.__ModuleLoader__.load({
               h('div',{className:'pi-actions'},
                 offset>0 ? button('上一页',()=>{setOffset(Math.max(0,offset-20));run('library',historyArgs(Math.max(0,offset-20)));}) : null,
                 offset+20<total ? button('下一页',()=>{setOffset(offset+20);run('library',historyArgs(offset+20));}) : null),
+            ),
+          ),
               h(
                 "section",
-                { className: "pi-card" },
+                { className: "pi-card pi-report-card", ref: reportAnchor },
                 h("h2", null, "研究报告"),
                 report
                   ? h(ReportView, {
@@ -513,8 +520,6 @@ window.__ModuleLoader__.load({
                       "完成分析或选择历史报告后，内容将显示在这里。",
                     ),
               ),
-            ),
-          ),
         ),
       );
     }
@@ -523,7 +528,7 @@ window.__ModuleLoader__.load({
       apply(ctx) {
         ctx.effect(() => {
           const style = document.createElement("style");
-          style.textContent = css;
+          style.textContent = css + readingStyle;
           document.head.appendChild(style);
           return () => style.remove();
         });

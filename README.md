@@ -7,7 +7,7 @@ DeepSeek Harness 的 Cordis 研究插件。将公开论文检索、证据提取�
 需要 Node.js ≥ 22.12 和 DeepSeek Harness `>=0.2.1-alpha.2 <0.3.0`。已验证的宿主及测试范围见 [验收记录](docs/acceptance-v0.2.0.md)。
 
 ```bash
-dsh plugin --profile web add dsh-paper-insight@0.2.2
+dsh plugin --profile web add dsh-paper-insight@0.2.3
 dsh web
 ```
 
@@ -21,11 +21,22 @@ dsh web
 Web 工作台目前支持本机 `localhost/127.0.0.1/::1` 的 Web Harness，不提供远程公开 HTTP 服务或 Electron IPC 适配。未打开任何会话时会提示先打开会话。工具本身可在 headless 使用：
 
 ```bash
-dsh plugin --profile headless add dsh-paper-insight@0.2.2
+dsh plugin --profile headless add dsh-paper-insight@0.2.3
 dsh headless "检索 ReAct 论文，执行十模块分析并保存本地；然后只重做沙箱模块，比较两个版本。"
 ```
 
 Web、headless 是不同 profile，分别安装并配置模型。模型凭据由 Harness 管理，不需给插件另配模型 API Key。
+
+## 图文研究报告（0.2.3）
+
+- 独立宽幅阅读区；按“先看重点、理解技术、研究依据、产品应用、验证行动、证据与资料”导航，章节标题使用自然中文。
+- 新报告首先展示核心思想、主要价值、适用边界与行动建议。机制图在相关章节直接显示，详细解析和证据附录默认收起；可“展开全部细节”或“只看重点”。点击证据编号会自动展开并定位原文。
+- 技术理解、沙箱、体验、PoC 四个模块分别按证据生成具体机制/流程、集成框架、用户旅程和验证流程图。完整报告最多四张分析图，另保留引用关系图；只选部分模块则只生成对应图。
+- 图示有事实/推断/待验证方案标签、说明及引用。证据不足时显示不绘图的具体原因；不保证每篇论文都有四张图。节点、边及引用校验通过后由程序生成 Mermaid，模型不能提供可执行图表配置。
+- 旧报告自动使用新版分组、中文字段和折叠布局。旧文件不改写、不自动调用模型；要补充图示，在历史里“重新分析选中内容”生成新版本。Markdown 源码/下载仍保留完整内容。
+- 结构化报告保留 schemaVersion 2，promptVersion 更新至 0.2.3，章节可增补 visual/visualOmission。跨提示词版本继续分析时复用原文和证据，但重新生成分析章节。
+
+图表语法、安全校验或渲染失败时显示原因及源码，正文仍可阅读。图示是对资料的解释，并不等同于作者原图或已验证的工程方案。
 
 ## 研究历史与失败恢复（0.2.2）
 
