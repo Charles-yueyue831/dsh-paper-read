@@ -66,5 +66,38 @@
       "bytes": 4030,
       "sha256": "22cd3ebc888c9583819b9b718eb5954831175862fc7124f40d6382be66cb4d72"
     }
-  ]
+  ],
+  "renderingPatch": {
+    "version": "0.2.1",
+    "testedAt": "2026-10-18T07:44:58.994Z",
+    "automatedTests": 55,
+    "fixture": {
+      "table": 1,
+      "mathExpressions": 2,
+      "mermaidDiagrams": 2,
+      "expectedDiagramErrors": 2,
+      "scripts": 0,
+      "unsafeLinks": 0,
+      "duplicateHeadingTargets": 2,
+      "citationFocus": "P1-F1",
+      "downloadSha256": "276ef3fbb6ab5ffea88ca61721e4015dc05ae82362a89d0066cc7d13947e056f"
+    },
+    "realReport": {
+      "reference": "arxiv:2210.03629v3",
+      "sectionHeadings": 15,
+      "mermaidDiagrams": 1,
+      "diagramErrors": 0
+    },
+    "researchBaseline": "0.2.0; original evidence and report files unchanged",
+    "automaticReport": {
+      "runId": "1792309473224-b3c05722",
+      "status": "completed",
+      "modules": [
+        "sandbox"
+      ],
+      "reportSha256": "a43293cd688794eeb40619ae2999d9004fcfa391ab11c76eec41f85d7480366b",
+      "modelCalls": 1,
+      "sourceExact": true
+    }
+  }
 }

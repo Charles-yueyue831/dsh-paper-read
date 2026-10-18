@@ -1,6 +1,6 @@
 {
   "name": "dsh-paper-insight",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "DeepSeek Harness 文献研究插件：多源检索、证据分析、Agent 沙箱与产品创新、本地归档。",
   "type": "module",
   "main": "index.js",
@@ -20,7 +20,9 @@
     "scripts",
     "tests",
     "LICENSE",
-    "client.js"
+    "client.js",
+    "client",
+    "dist"
   ],
   "engines": {
     "node": ">=22.12.0",
@@ -34,7 +36,8 @@
       "platform": "web",
       "inject": [
         "@deepseek-ai/dsh-client-ui-sidebar",
-        "@deepseek-ai/dsh-client-ui-layout"
+        "@deepseek-ai/dsh-client-ui-layout",
+        "@deepseek-ai/dsh-client-ui-primitives"
       ]
     }
   },
@@ -43,7 +46,8 @@
     "test:live": "node scripts/live-smoke.js",
     "test:host": "node scripts/host-smoke.js",
     "check": "node --check index.js && node --test tests/*.test.js",
-    "test:acceptance": "node scripts/verify-acceptance.js"
+    "test:acceptance": "node scripts/verify-acceptance.js",
+    "build:client": "node scripts/build-client.js"
   },
   "dependencies": {
     "cheerio": "1.1.2",
@@ -64,5 +68,10 @@
     "type": "git",
     "url": "git+https://github.com/Charles-yueyue831/dsh-paper-read.git"
   },
-  "homepage": "https://github.com/Charles-yueyue831/dsh-paper-read#readme"
+  "homepage": "https://github.com/Charles-yueyue831/dsh-paper-read#readme",
+  "devDependencies": {
+    "dompurify": "3.4.17",
+    "esbuild": "0.28.2",
+    "mermaid": "12.2.0"
+  }
 }

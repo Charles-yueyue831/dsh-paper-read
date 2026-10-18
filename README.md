@@ -7,7 +7,7 @@ DeepSeek Harness 的 Cordis 研究插件。将公开论文检索、证据提取�
 需要 Node.js ≥ 22.12 和 DeepSeek Harness `>=0.2.1-alpha.2 <0.3.0`。已验证的宿主及测试范围见 [验收记录](docs/acceptance-v0.2.0.md)。
 
 ```bash
-dsh plugin --profile web add dsh-paper-insight@0.2.0
+dsh plugin --profile web add dsh-paper-insight@0.2.1
 dsh web
 ```
 
@@ -16,16 +16,26 @@ dsh web
 1. 先在 Harness 创建或打开一个会话，选择工作区与模型，并允许工作区写入。
 2. 工作台选择该会话。检索主题，或输入 URL / DOI / arXiv ID / 本地文件路径。
 3. 勾选研究模块并开始分析，查看阶段进度；可取消，之后从历史检查点继续。
-4. 在研究历史查看、搜索、重做模块或选择报告比较。报告和引用图保存在会话工作区。
+4. 在研究历史查看、搜索、重做模块或选择报告比较。分析结束后自动展示完整报告；历史报告默认进入阅读视图。报告和引用图保存在会话工作区。
 
 Web 工作台目前支持本机 `localhost/127.0.0.1/::1` 的 Web Harness，不提供远程公开 HTTP 服务或 Electron IPC 适配。未打开任何会话时会提示先打开会话。工具本身可在 headless 使用：
 
 ```bash
-dsh plugin --profile headless add dsh-paper-insight@0.2.0
+dsh plugin --profile headless add dsh-paper-insight@0.2.1
 dsh headless "检索 ReAct 论文，执行十模块分析并保存本地；然后只重做沙箱模块，比较两个版本。"
 ```
 
 Web、headless 是不同 profile，分别安装并配置模型。模型凭据由 Harness 管理，不需给插件另配模型 API Key。
+
+## 报告阅读（0.2.1）
+
+- 阅读视图渲染标题、列表、表格、引用、代码高亮和数学公式，复用 Harness 的 Markdown 组件。
+- 章节目录可跳转到二级标题；报告中的证据链接可跳转到原文定位。
+- Mermaid 流程图、关系图和时序图在本地绘制，首次遇到图表时才加载随包提供的渲染器，无需外部 CDN。
+- “Markdown 源码”保留原始文本，“下载 Markdown”导出同一份原文。阅读已有报告不调用模型。
+- 图表语法错误、超出限制或含交互/配置/外部资源时显示原因及源码，其他正文照常显示。原始 HTML 不作为脚本执行。
+
+本次浏览器与打包验收见 [0.2.1 验收记录](docs/acceptance-v0.2.1.md)。
 
 ## 核心能力
 
@@ -151,6 +161,7 @@ ACL Anthology、PMLR（ICML 等）、NeurIPS、CVF 的开放全文可直接导�
 
 ```bash
 npm ci --ignore-scripts
+npm run build:client
 npm test
 DSH_TEST_ROOT=/path/to/official-runtime npm run test:host
 npm run test:live
@@ -159,7 +170,7 @@ npm pack --ignore-scripts
 
 `test:host` 使用真实 Cordis/ToolRuntime/LlmRuntime，但响应为合成测试数据；真实模型与侧边栏验收另见 [验收记录](docs/acceptance-v0.2.0.md)。
 
-模块职责：`papers.js` 数据源与归一化；`http.js` 网络限制与退避；`content.js` HTML/PDF 提取；`model.js` 宿主模型适配；`analysis.js` 证据与报告校验；`modules.js` 模板字段；`workflow.js` 检查点与阶段；`storage.js` 原子归档和历史；`knowledge.js` 比较/订阅/聚合；`web.js` 工作台宿主接口；`client.js` 原生侧边栏 UI。
+模块职责：`papers.js` 数据源与归一化；`http.js` 网络限制与退避；`content.js` HTML/PDF 提取；`model.js` 宿主模型适配；`analysis.js` 证据与报告校验；`modules.js` 模板字段；`workflow.js` 检查点与阶段；`storage.js` 原子归档和历史；`knowledge.js` 比较/订阅/聚合；`web.js` 工作台宿主接口；`client/main.js` 原生侧边栏 UI；`client/report-view.js` 报告阅读；`client/report-utils.js` 分块、引用跳转和图表约束；`client/diagram.js` 本地 Mermaid/SVG 清洗。`client.js` 与 `dist/diagram.js` 是构建产物，修改源码后运行 `npm run build:client` 并一同提交。
 
 新增来源时扩展 `sourceNames`、`PaperSources.oneSearch/resolve` 与允许域名，补充真实 API 样本和离线失败测试。新增模块时扩展 `MODULE_FIELDS`、章节目录和分析提示词，补充 Schema 与验收案例。增加客户端功能时使用 Harness 槽位，不替换侧边栏 DOM。
 

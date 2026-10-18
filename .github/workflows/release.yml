@@ -33,6 +33,8 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci --ignore-scripts
+      - run: npm run build:client
+      - run: git diff --exit-code -- client.js dist
       - run: npm test
       - name: Package verified source
         env:
