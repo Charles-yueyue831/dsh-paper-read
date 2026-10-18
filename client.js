@@ -114,7 +114,7 @@
 
   // client/report-view.js
   var diagramModule;
-  var loadDiagram = () => diagramModule ||= import("/api/paper-insight/assets/diagram.js?v=0.2.1").catch((error) => {
+  var loadDiagram = () => diagramModule ||= import("/api/paper-insight/assets/diagram.js?v=0.2.2").catch((error) => {
     diagramModule = null;
     throw error;
   });
@@ -292,6 +292,98 @@
     };
   }
 
+  // client/history-view.js
+  var statusLabels = { completed: "\u5DF2\u5B8C\u6210", failed: "\u5206\u6790\u672A\u5B8C\u6210", cancelled: "\u5DF2\u53D6\u6D88", running: "\u6B63\u5728\u5206\u6790", fetched: "\u5DF2\u53D6\u5F97\u8BBA\u6587" };
+  var stageLabels = { starting: "\u51C6\u5907\u4EFB\u52A1", fetch: "\u83B7\u53D6\u8BBA\u6587", research: "\u68C0\u7D22\u76F8\u5173\u7814\u7A76", analysis: "\u5206\u6790\u8BBA\u6587", evidence: "\u9605\u8BFB\u5E76\u63D0\u53D6\u4F9D\u636E", synthesis: "\u64B0\u5199\u62A5\u544A", save: "\u4FDD\u5B58\u62A5\u544A" };
+  function explainFailure(message = "") {
+    if (/标题请先搜索/.test(message)) return "\u5148\u524D\u7248\u672C\u672A\u80FD\u8BC6\u522B\u8BBA\u6587\u6807\u9898\u3002\u73B0\u5728\u53EF\u4EE5\u91CD\u65B0\u5C1D\u8BD5\u5206\u6790\uFF0C\u7CFB\u7EDF\u4F1A\u5148\u68C0\u7D22\u8FD9\u7BC7\u8BBA\u6587\u3002";
+    if (/max-tokens|MODEL_OUTPUT_TRUNCATED/.test(message)) return "\u6A21\u578B\u8F93\u51FA\u8FC7\u957F\uFF0C\u672C\u6B21\u5206\u6790\u672A\u5B8C\u6210\u3002\u53EF\u51CF\u5C11\u9009\u4E2D\u7684\u5206\u6790\u5185\u5BB9\u540E\u91CD\u8BD5\u3002";
+    if (/HTTP 429/.test(message)) return "\u8BBA\u6587\u7F51\u7AD9\u6682\u65F6\u9650\u5236\u8BBF\u95EE\uFF0C\u8BF7\u7A0D\u540E\u91CD\u8BD5\uFF0C\u6216\u4F7F\u7528\u5176\u4ED6\u6765\u6E90\u7684\u8BBA\u6587\u94FE\u63A5\u3002";
+    if (/timeout|timed out|超时/i.test(message)) return "\u7B49\u5F85\u8BBA\u6587\u7F51\u7AD9\u6216\u6A21\u578B\u56DE\u590D\u8D85\u65F6\uFF0C\u53EF\u7A0D\u540E\u7EE7\u7EED\u5B8C\u6210\u5206\u6790\u3002";
+    if (/输出经一次修复仍不合格/.test(message)) return "\u6A21\u578B\u8FD4\u56DE\u7684\u5185\u5BB9\u4E0D\u5B8C\u6574\u6216\u683C\u5F0F\u4E0D\u7B26\u5408\u8981\u6C42\uFF0C\u5DF2\u4FDD\u5B58\u6210\u529F\u5B8C\u6210\u7684\u90E8\u5206\uFF0C\u53EF\u7EE7\u7EED\u5C1D\u8BD5\u3002";
+    return message;
+  }
+  function createHistoryView(React) {
+    const h = React.createElement;
+    return function HistoryView({ runs, selected, setSelected, detail, setDetail, run, busy, modules, onRepair }) {
+      const [editing, setEditing] = React.useState(null);
+      const [removing, setRemoving] = React.useState(null);
+      React.useEffect(() => {
+        setEditing(null);
+        setRemoving(null);
+      }, [runs]);
+      const action = (name, fn) => h("button", { type: "button", disabled: busy, onClick: fn }, name);
+      const args = (r) => ({ key: r.key, runId: r.runId });
+      return h(
+        React.Fragment,
+        null,
+        ...runs.map((r) => h(
+          "article",
+          { key: r.key + "/" + r.runId, className: "pi-result" },
+          h("label", null, h("input", {
+            type: "checkbox",
+            disabled: busy || !!r.record?.deletedAt || r.status !== "completed" || !!r.type,
+            checked: selected.some((s) => s.runId === r.runId && s.key === r.key),
+            onChange: (e) => setSelected(e.target.checked ? [...selected, args(r)] : selected.filter((s) => s.runId !== r.runId || s.key !== r.key))
+          }), r.displayTitle || r.paper?.title || "\u672A\u8BC6\u522B\u7684\u8BBA\u6587"),
+          h("div", { className: "pi-small" }, (r.record?.deletedAt ? "\u5DF2\u5220\u9664" : r.interrupted ? "\u4E0A\u6B21\u5206\u6790\u4E2D\u65AD" : statusLabels[r.status] || r.status) + " \xB7 " + (r.startedAt ? new Date(r.startedAt).toLocaleString() : "\u65F6\u95F4\u672A\u77E5")),
+          r.record?.notes ? h("p", null, r.record.notes) : null,
+          r.error ? h("p", { className: "pi-error" }, explainFailure(r.error)) : null,
+          !r.record?.deletedAt && r.recoveryError ? h("p", { className: "pi-small" }, r.recoveryError) : null,
+          h(
+            "div",
+            { className: "pi-actions" },
+            action("\u67E5\u770B\u8BE6\u60C5", () => {
+              setEditing(null);
+              run("history_detail", args(r));
+            }),
+            r.record?.deletedAt ? action("\u6062\u590D\u8BB0\u5F55", () => run("history_restore", { ...args(r), revision: r.record.revision || 0 })) : h(
+              React.Fragment,
+              null,
+              r.status === "completed" && r.type !== "discovery" ? action("\u67E5\u770B\u62A5\u544A", () => run("report", args(r))) : null,
+              r.canResume ? action(r.hasDocument ? "\u7EE7\u7EED\u5B8C\u6210\u5206\u6790" : "\u91CD\u65B0\u5C1D\u8BD5\u5206\u6790", () => run("resume", args(r))) : null,
+              r.canReanalyze ? action("\u91CD\u65B0\u5206\u6790\u9009\u4E2D\u5185\u5BB9", () => run("analyze", { ...args(r), modules })) : null,
+              !r.type && !r.hasDocument && r.status !== "running" ? action("\u4FEE\u6539\u8BBA\u6587\u4FE1\u606F", () => onRepair(r.input || {})) : null,
+              action("\u7F16\u8F91\u8BB0\u5F55", () => setEditing({ ...args(r), title: r.displayTitle || "", notes: r.record?.notes || "", revision: r.record?.revision || 0 })),
+              action("\u5220\u9664\u8BB0\u5F55", () => setRemoving(r.runId))
+            )
+          ),
+          removing === r.runId ? h(
+            "div",
+            { className: "pi-note", role: "group", "aria-label": "\u786E\u8BA4\u5220\u9664\u8BB0\u5F55" },
+            h("p", null, "\u5220\u9664\u540E\u4F1A\u79FB\u5165\u201C\u5DF2\u5220\u9664\u201D\uFF0C\u8BBA\u6587\u548C\u62A5\u544A\u4ECD\u4FDD\u7559\uFF0C\u53EF\u968F\u65F6\u6062\u590D\u3002"),
+            action("\u786E\u8BA4\u5220\u9664", () => run("history_delete", { ...args(r), revision: r.record?.revision || 0 })),
+            action("\u4FDD\u7559\u8BB0\u5F55", () => setRemoving(null))
+          ) : null,
+          editing?.runId === r.runId ? h(
+            "form",
+            { onSubmit: (e) => {
+              e.preventDefault();
+              run("history_update", editing);
+            } },
+            h("label", null, "\u7814\u7A76\u540D\u79F0", h("input", { value: editing.title, required: true, maxLength: 300, onChange: (e) => setEditing({ ...editing, title: e.target.value }) })),
+            h("label", null, "\u6211\u7684\u5907\u6CE8", h("textarea", { value: editing.notes, maxLength: 5e3, onChange: (e) => setEditing({ ...editing, notes: e.target.value }) })),
+            h("div", { className: "pi-actions" }, h("button", { type: "submit", disabled: busy }, "\u4FDD\u5B58\u4FEE\u6539"), action("\u53D6\u6D88\u7F16\u8F91", () => setEditing(null)))
+          ) : null
+        )),
+        detail ? h(
+          "section",
+          { className: "pi-note", "aria-label": "\u7814\u7A76\u8BB0\u5F55\u8BE6\u60C5" },
+          h("h3", null, detail.displayTitle),
+          h("p", null, "\u8BBA\u6587\u539F\u540D\uFF1A" + (detail.paper?.title || "\u672A\u8BC6\u522B")),
+          h("p", null, "\u72B6\u6001\uFF1A" + (detail.record?.deletedAt ? "\u5DF2\u5220\u9664" : detail.interrupted ? "\u4E0A\u6B21\u5206\u6790\u4E2D\u65AD" : statusLabels[detail.status] || detail.status)),
+          h("p", null, "\u8BBA\u6587\u4FE1\u606F\uFF1A" + (detail.input?.reference || detail.input?.file || detail.paper?.url || "\u672A\u4FDD\u5B58")),
+          h("p", null, "\u6211\u7684\u5907\u6CE8\uFF1A" + (detail.record?.notes || "\u6682\u65E0\u5907\u6CE8")),
+          !detail.record?.deletedAt ? h("p", null, "\u5DF2\u5B8C\u6210\u5206\u6790\u5185\u5BB9\uFF1A" + (detail.completedModules?.length || 0) + " \u9879") : h("p", null, "\u8BBA\u6587\u6750\u6599\u4E0E\u62A5\u544A\u5DF2\u4FDD\u7559\uFF0C\u6062\u590D\u8BB0\u5F55\u540E\u53EF\u7EE7\u7EED\u67E5\u770B\u3002"),
+          detail.error ? h("p", { className: "pi-error" }, "\u672A\u5B8C\u6210\u539F\u56E0\uFF1A" + explainFailure(detail.error)) : null,
+          detail.error ? h("details", null, h("summary", null, "\u67E5\u770B\u539F\u59CB\u9519\u8BEF\u4FE1\u606F"), h("pre", { className: "pi-report-source" }, detail.error)) : null,
+          h("p", { className: "pi-small" }, "\u8BB0\u5F55\u5171\u66F4\u65B0 " + (detail.record?.revision || 0) + " \u6B21\u3002\u8BBA\u6587\u539F\u6587\u548C\u5DF2\u751F\u6210\u7684\u62A5\u544A\u4FDD\u6301\u539F\u6837\u3002"),
+          action("\u5173\u95ED\u8BE6\u60C5", () => setDetail(null))
+        ) : null
+      );
+    };
+  }
+
   // client/main.js
   window.__ModuleLoader__.load({
     id: "dsh-paper-insight",
@@ -300,7 +392,8 @@
       const h = React.createElement;
       const { MarkdownText } = require2("@deepseek-ai/dsh-client-ui-primitives");
       const ReportView = createReportView(React, MarkdownText);
-      const { useState, useEffect } = React;
+      const HistoryView = createHistoryView(React);
+      const { useState, useEffect, useRef } = React;
       const labels = {
         paper: "\u6280\u672F\u7406\u89E3",
         "first-principles": "\u7B2C\u4E00\u6027\u539F\u7406",
@@ -328,7 +421,7 @@
         return value;
       }
       function Workbench() {
-        const [sessions, setSessions] = useState([]), [session, setSession] = useState(""), [query, setQuery] = useState(""), [reference, setReference] = useState(""), [local, setLocal] = useState(false), [modules, setModules] = useState(Object.keys(labels)), [papers, setPapers] = useState([]), [runs, setRuns] = useState([]), [selected, setSelected] = useState([]), [historyQuery, setHistoryQuery] = useState(""), [report, setReport] = useState(""), [status, setStatus] = useState("\u9009\u62E9\u4F1A\u8BDD\u4EE5\u4F7F\u7528\u5BF9\u5E94\u5DE5\u4F5C\u533A\u4E0E\u6A21\u578B\u3002"), [error, setError] = useState(""), [job, setJob] = useState(null), [topics, setTopics] = useState(""), [advanced, setAdvanced] = useState({
+        const [sessions, setSessions] = useState([]), [session, setSession] = useState(""), [query, setQuery] = useState(""), [reference, setReference] = useState(""), [local, setLocal] = useState(false), [modules, setModules] = useState(Object.keys(labels)), [papers, setPapers] = useState([]), [runs, setRuns] = useState([]), [selected, setSelected] = useState([]), [historyQuery, setHistoryQuery] = useState(""), [historyStatus, setHistoryStatus] = useState(""), [deleted, setDeleted] = useState(false), [offset, setOffset] = useState(0), [total, setTotal] = useState(0), [detail, setDetail] = useState(null), [submitting, setSubmitting] = useState(false), [report, setReport] = useState(""), [status, setStatus] = useState("\u9009\u62E9\u4F1A\u8BDD\u4EE5\u4F7F\u7528\u5BF9\u5E94\u5DE5\u4F5C\u533A\u4E0E\u6A21\u578B\u3002"), [error, setError] = useState(""), [job, setJob] = useState(null), [topics, setTopics] = useState(""), [advanced, setAdvanced] = useState({
           author: "",
           venue: "",
           institution: "",
@@ -336,6 +429,20 @@
           until: "",
           sort: "relevance"
         });
+        const submitLock = useRef(false);
+        const referenceInput = useRef(null);
+        const busy = !!job || submitting;
+        const historyArgs = (page = offset) => ({ query: historyQuery, deleted, ...historyStatus ? { status: historyStatus } : {}, offset: page, limit: 20 });
+        const repair = (input2 = {}) => {
+          setLocal(Boolean(input2.file));
+          setReference(input2.file || input2.reference || "");
+          setReport("");
+          setDetail(null);
+          setError("");
+          referenceInput.current?.scrollIntoView({ block: "center" });
+          referenceInput.current?.focus();
+          setStatus("\u586B\u5199\u8BBA\u6587\u4FE1\u606F\uFF0C\u7136\u540E\u70B9\u51FB\u201C\u5F00\u59CB\u5206\u6790\u201D\u3002\u65B0\u7684\u5206\u6790\u4F1A\u4FDD\u7559\u5728\u7814\u7A76\u5386\u53F2\u4E2D\u3002");
+        };
         const refresh = () => api("/sessions").then((v) => {
           setSessions(v.sessions);
           setSession(
@@ -346,6 +453,15 @@
           refresh();
         }, []);
         useEffect(() => {
+          setRuns([]);
+          setSelected([]);
+          setReport("");
+          setDetail(null);
+          setPapers([]);
+          setOffset(0);
+          if (session) run("library", historyArgs(0));
+        }, [session]);
+        useEffect(() => {
           if (!job) return;
           let stopped = false;
           let timer;
@@ -354,38 +470,51 @@
               const value = await api("/jobs?id=" + encodeURIComponent(job.id));
               if (stopped) return;
               setStatus(
-                value.status === "running" ? `\u6B63\u5728\u5904\u7406\uFF1A${value.progress?.stage || "starting"} ${value.progress?.completed || ""}${value.progress?.total ? "/" + value.progress.total : ""}` : value.status === "completed" ? "\u5DF2\u5B8C\u6210\uFF0C\u7ED3\u679C\u5DF2\u8FD4\u56DE\u3002" : value.status
+                value.status === "running" ? `\u6B63\u5728\u5904\u7406\uFF1A${stageLabels[value.progress?.stage] || "\u5206\u6790\u4E2D"} ${value.progress?.completed || ""}${value.progress?.total ? "/" + value.progress.total : ""}` : value.status === "completed" ? "\u5DF2\u5B8C\u6210\uFF0C\u7ED3\u679C\u5DF2\u8FD4\u56DE\u3002" : statusLabels[value.status] || "\u4EFB\u52A1\u672A\u5B8C\u6210"
               );
               if (value.status === "running") {
                 timer = setTimeout(poll, 1200);
                 return;
               }
+              const queueHistory = async () => {
+                const next = await api("/run", { sessionId: job.sessionId, tool: "paper_insight_library", args: historyArgs() });
+                if (!stopped) setJob({ id: next.id, action: "library", sessionId: job.sessionId });
+              };
               if (value.error) {
-                setJob(null);
-                setError(value.error.message);
-                if (value.error.key)
-                  setRuns((old) => [
-                    {
-                      key: value.error.key,
-                      runId: value.error.runId,
-                      status: value.status,
-                      paper: { title: "\u53EF\u4ECE\u68C0\u67E5\u70B9\u7EED\u8DD1" }
-                    },
-                    ...old
-                  ]);
+                setError(explainFailure(value.error.message));
+                if (value.error.candidates) setPapers(value.error.candidates);
+                if (value.error.key) await queueHistory();
+                else {
+                  setJob(null);
+                  submitLock.current = false;
+                }
                 return;
               }
               const r = value.result;
               if (job.action === "search") setPapers(r.papers);
-              else if (job.action === "library") setRuns(r.runs);
-              else if (job.action === "subscriptions") {
+              else if (job.action === "library") {
+                setRuns(r.runs);
+                setTotal(r.total || 0);
+                setSelected([]);
+              } else if (job.action === "history_detail") setDetail(r);
+              else if (job.action.startsWith("history_")) {
+                if (job.action === "history_delete") setReport("");
+                if (r.record) setDetail(r.record);
+                await queueHistory();
+                return;
+              } else if (job.action === "subscriptions") {
                 setTopics(r.topics.join("\n"));
                 setStatus("\u5173\u6CE8\u4E3B\u9898\u5DF2\u4FDD\u5B58\uFF1B\u7531 Harness \u5B9A\u65F6\u4EFB\u52A1\u89E6\u53D1\u589E\u91CF\u53D1\u73B0\u3002");
               } else if (job.action === "discover_updates") {
                 setPapers(r.newPapers);
                 setStatus(`\u53D1\u73B0 ${r.newPapers.length} \u7BC7\u65B0\u589E\u6216\u66F4\u65B0\u8BBA\u6587\u3002`);
-              } else if (r.markdown) setReport(r.markdown);
-              else if (r.reportPath) {
+              } else if (r.markdown) {
+                setReport(r.markdown);
+                if (job.reloadHistory) {
+                  await queueHistory();
+                  return;
+                }
+              } else if (r.reportPath) {
                 setStatus("\u5206\u6790\u5DF2\u5B8C\u6210\uFF0C\u6B63\u5728\u8BFB\u53D6\u5B8C\u6574\u62A5\u544A\u2026");
                 const loaded = await api("/run", {
                   sessionId: job.sessionId,
@@ -396,21 +525,13 @@
                 setJob({
                   id: loaded.id,
                   action: "report",
+                  reloadHistory: true,
                   sessionId: job.sessionId
                 });
-                setRuns((old) => [
-                  {
-                    key: r.key,
-                    runId: r.runId,
-                    status: "completed",
-                    paper: { title: r.title || "\u6BD4\u8F83\u62A5\u544A" },
-                    type: job.action === "compare_papers" ? "comparison" : void 0
-                  },
-                  ...old
-                ]);
                 return;
               } else setReport(JSON.stringify(r, null, 2));
               setJob(null);
+              submitLock.current = false;
               if (r.errors?.length)
                 setError(
                   "\u90E8\u5206\u6765\u6E90\u672A\u8FD4\u56DE\u7ED3\u679C\uFF1A" + r.errors.map((e) => e.source + " " + e.error).join("\uFF1B")
@@ -419,6 +540,7 @@
               if (!stopped) {
                 setError(e.message);
                 setJob(null);
+                submitLock.current = false;
               }
             }
           };
@@ -429,7 +551,12 @@
           };
         }, [job]);
         const run = async (action, args = {}) => {
+          if (submitLock.current) return;
           setError("");
+          if (action === "analyze" && !modules.length) {
+            setError("\u8BF7\u81F3\u5C11\u9009\u62E9\u4E00\u9879\u5206\u6790\u5185\u5BB9\u3002");
+            return;
+          }
           if (!session) {
             setError(
               "\u8BF7\u5148\u5728 Harness \u6253\u5F00\u4E00\u4E2A\u4F1A\u8BDD\u5E76\u914D\u7F6E\u6A21\u578B\u548C\u5DE5\u4F5C\u533A\uFF0C\u518D\u70B9\u51FB\u5237\u65B0\u4F1A\u8BDD\u3002"
@@ -437,6 +564,8 @@
             return;
           }
           try {
+            submitLock.current = true;
+            setSubmitting(true);
             setStatus("\u63D0\u4EA4\u4E2D\u2026");
             const value = await api("/run", {
               sessionId: session,
@@ -446,6 +575,9 @@
             setJob({ id: value.id, action, sessionId: session });
           } catch (e) {
             setError(e.message);
+            submitLock.current = false;
+          } finally {
+            setSubmitting(false);
           }
         };
         const button = (text, click, primary = false) => h(
@@ -453,7 +585,7 @@
           {
             type: "button",
             onClick: click,
-            disabled: !!job,
+            disabled: busy,
             className: primary ? "pi-primary" : ""
           },
           text
@@ -462,12 +594,18 @@
           "label",
           null,
           label,
-          h("input", { type, value, onChange: (e) => change(e.target.value) })
+          h("input", { type, value, ...change === setReference ? { ref: referenceInput } : {}, onChange: (e) => change(e.target.value) })
         );
-        const analyze = (ref) => run("analyze", {
-          ...local ? { file: ref } : { reference: ref },
-          modules
-        });
+        const analyze = (ref) => {
+          if (!ref.trim()) {
+            setError(local ? "\u8BF7\u586B\u5199\u5DE5\u4F5C\u533A\u5185\u7684\u6587\u4EF6\u8DEF\u5F84\u3002" : "\u8BF7\u586B\u5199\u8BBA\u6587\u6807\u9898\u3001\u94FE\u63A5\u6216\u7F16\u53F7\u3002");
+            return;
+          }
+          return run("analyze", {
+            ...local ? { file: ref.trim() } : { reference: ref.trim() },
+            modules
+          });
+        };
         return h(
           "section",
           { className: "pi-workbench", "aria-label": "\u8BBA\u6587\u7814\u7A76\u5DE5\u4F5C\u53F0" },
@@ -482,6 +620,7 @@
               {
                 "aria-label": "\u7814\u7A76\u4F1A\u8BDD",
                 value: session,
+                disabled: busy,
                 onChange: (e) => setSession(e.target.value)
               },
               h("option", { value: "" }, "\u8BF7\u9009\u62E9\u4F1A\u8BDD"),
@@ -588,14 +727,14 @@
                   "\u4F7F\u7528\u5DE5\u4F5C\u533A\u5185\u672C\u5730\u6587\u4EF6"
                 ),
                 input(
-                  local ? "PDF / \u6587\u672C\u76F8\u5BF9\u8DEF\u5F84" : "\u8BBA\u6587 URL / DOI / arXiv ID",
+                  local ? "PDF / \u6587\u672C\u76F8\u5BF9\u8DEF\u5F84" : "\u8BBA\u6587\u6807\u9898 / \u94FE\u63A5 / DOI / arXiv \u7F16\u53F7",
                   reference,
                   setReference
                 ),
                 h(
                   "p",
                   { className: "pi-small" },
-                  "\u9009\u62E9\u672C\u6B21\u7814\u7A76\u6A21\u5757\u3002\u5B8C\u6574\u5206\u6790\u53EF\u80FD\u8017\u65F6\u6570\u5206\u949F\uFF0C\u5E76\u4F7F\u7528\u5F53\u524D\u4F1A\u8BDD\u6A21\u578B\u989D\u5EA6\u3002"
+                  "\u52FE\u9009\u672C\u6B21\u60F3\u4E86\u89E3\u7684\u5185\u5BB9\u3002\u5B8C\u6574\u5206\u6790\u53EF\u80FD\u8017\u65F6\u6570\u5206\u949F\uFF0C\u5E76\u4F7F\u7528\u5F53\u524D\u4F1A\u8BDD\u6A21\u578B\u989D\u5EA6\u3002"
                 ),
                 h(
                   "div",
@@ -697,61 +836,46 @@
                 "section",
                 { className: "pi-card" },
                 h("h2", null, "\u7814\u7A76\u5386\u53F2"),
-                input("\u5168\u6587\u641C\u7D22\u5386\u53F2\u62A5\u544A", historyQuery, setHistoryQuery),
+                h("p", { className: "pi-small" }, "\u7EE7\u7EED\u5B8C\u6210\u5206\u6790\uFF1A\u4FDD\u7559\u5DF2\u5B8C\u6210\u7684\u5185\u5BB9\uFF0C\u63A5\u7740\u5B8C\u6210\u5269\u4F59\u90E8\u5206\u3002\u91CD\u65B0\u5206\u6790\u9009\u4E2D\u5185\u5BB9\uFF1A\u6309\u5DE6\u4FA7\u52FE\u9009\u7684\u5185\u5BB9\u751F\u6210\u65B0\u7248\u672C\uFF0C\u65E7\u62A5\u544A\u4ECD\u4FDD\u7559\u3002"),
+                input("\u641C\u7D22\u8BBA\u6587\u3001\u5907\u6CE8\u6216\u62A5\u544A\u6B63\u6587", historyQuery, setHistoryQuery),
+                h("label", null, "\u5386\u53F2\u72B6\u6001", h(
+                  "select",
+                  { value: historyStatus, onChange: (e) => setHistoryStatus(e.target.value) },
+                  h("option", { value: "" }, "\u5168\u90E8\u72B6\u6001"),
+                  ...Object.entries(statusLabels).map(([value, label]) => h("option", { key: value, value }, label))
+                )),
+                h("label", null, h("input", { type: "checkbox", checked: deleted, onChange: (e) => setDeleted(e.target.checked) }), "\u67E5\u770B\u5DF2\u5220\u9664\u8BB0\u5F55"),
                 h(
                   "div",
                   { className: "pi-actions" },
-                  button(
-                    "\u67E5\u8BE2\u5386\u53F2",
-                    () => run("library", { query: historyQuery })
-                  ),
-                  button(
-                    "\u6BD4\u8F83\u6240\u9009\u8BBA\u6587",
-                    () => run("compare_papers", { reports: selected })
-                  )
+                  button("\u65B0\u5EFA\u7814\u7A76", () => repair()),
+                  button("\u67E5\u8BE2\u5386\u53F2", () => {
+                    setOffset(0);
+                    setDetail(null);
+                    run("library", historyArgs(0));
+                  }),
+                  button("\u6BD4\u8F83\u6240\u9009\u8BBA\u6587", () => {
+                    if (selected.length < 2) {
+                      setError("\u8BF7\u5148\u9009\u62E9\u81F3\u5C11\u4E24\u7BC7\u5DF2\u5B8C\u6210\u7684\u8BBA\u6587\u3002");
+                      return;
+                    }
+                    run("compare_papers", { reports: selected });
+                  })
                 ),
-                ...runs.map(
-                  (r, i) => h(
-                    "article",
-                    { key: r.runId + "-" + i, className: "pi-result" },
-                    h(
-                      "label",
-                      null,
-                      h("input", {
-                        type: "checkbox",
-                        disabled: r.status !== "completed" || Boolean(r.type),
-                        checked: selected.some((s) => s.runId === r.runId),
-                        onChange: (e) => setSelected(
-                          e.target.checked ? [...selected, { key: r.key, runId: r.runId }] : selected.filter((s) => s.runId !== r.runId)
-                        )
-                      }),
-                      r.paper?.title || r.key
-                    ),
-                    h(
-                      "div",
-                      { className: "pi-small" },
-                      r.status + " \xB7 " + r.runId
-                    ),
-                    h(
-                      "div",
-                      { className: "pi-actions" },
-                      r.status === "completed" && r.type !== "discovery" ? button(
-                        "\u67E5\u770B\u62A5\u544A",
-                        () => run("report", { key: r.key, runId: r.runId })
-                      ) : !r.type ? button(
-                        "\u4ECE\u68C0\u67E5\u70B9\u7EE7\u7EED",
-                        () => run("resume", { key: r.key, runId: r.runId })
-                      ) : null,
-                      !r.type ? button(
-                        "\u91CD\u505A\u6240\u9009\u6A21\u5757",
-                        () => run("analyze", {
-                          key: r.key,
-                          runId: r.runId,
-                          modules
-                        })
-                      ) : null
-                    )
-                  )
+                h("p", { className: "pi-small" }, `\u5171 ${total} \u6761\u5339\u914D\u8BB0\u5F55`),
+                !runs.length ? h("p", null, "\u6682\u65E0\u5339\u914D\u8BB0\u5F55\uFF0C\u53EF\u65B0\u5EFA\u7814\u7A76\u6216\u8C03\u6574\u67E5\u8BE2\u6761\u4EF6\u3002") : null,
+                h(HistoryView, { runs, selected, setSelected, detail, setDetail, run, busy, modules, onRepair: repair }),
+                h(
+                  "div",
+                  { className: "pi-actions" },
+                  offset > 0 ? button("\u4E0A\u4E00\u9875", () => {
+                    setOffset(Math.max(0, offset - 20));
+                    run("library", historyArgs(Math.max(0, offset - 20)));
+                  }) : null,
+                  offset + 20 < total ? button("\u4E0B\u4E00\u9875", () => {
+                    setOffset(offset + 20);
+                    run("library", historyArgs(offset + 20));
+                  }) : null
                 ),
                 h(
                   "section",

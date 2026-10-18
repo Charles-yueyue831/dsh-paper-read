@@ -99,5 +99,64 @@
       "modelCalls": 1,
       "sourceExact": true
     }
+  },
+  "historyPatch": {
+    "version": "0.2.2",
+    "testedAt": "2026-10-18",
+    "automatedTests": 63,
+    "hostTools": 27,
+    "titleImport": {
+      "runId": "1792313970225-40ef514c",
+      "status": "completed",
+      "parentRunId": null,
+      "modules": [
+        "sandbox"
+      ],
+      "modelCalls": 3,
+      "coverage": "partial-text",
+      "validation": {
+        "allSectionsPresent": false,
+        "evidenceIdsResolved": true,
+        "extractQuotesMatched": true,
+        "requestedModulesComplete": true,
+        "limitations": "程序只校验引用存在、短引与原文一致和结构完整；事实蕴含、产品可行性与图表解释仍需人工判断。"
+      },
+      "reportSha256": "82a2a77812d83b56c7c435a2a29f1cafdbf06dfcd3b5eba113e269a666d4c1f5"
+    },
+    "resumeFromSimulatedInterruption": {
+      "runId": "1792314316435-6c9fc403",
+      "status": "completed",
+      "parentRunId": "1792314297770-1332f596",
+      "modules": [
+        "sandbox"
+      ],
+      "modelCalls": 1,
+      "coverage": "partial-text",
+      "validation": {
+        "allSectionsPresent": false,
+        "evidenceIdsResolved": true,
+        "extractQuotesMatched": true,
+        "requestedModulesComplete": true,
+        "limitations": "程序只校验引用存在、短引与原文一致和结构完整；事实蕴含、产品可行性与图表解释仍需人工判断。"
+      },
+      "reportSha256": "99a8d72d13e62cba97ba50760785b98e5c6bab122e7a66ee45ce62c17c2f9c2c"
+    },
+    "browserChecks": [
+      "automatic history load",
+      "title input through real academic sources and host model",
+      "automatic report rendering",
+      "rename and notes saved",
+      "search by title",
+      "soft delete hides record",
+      "restore preserves report",
+      "pasted diagnostic rejected without new archive",
+      "resume button creates a separate completed report"
+    ],
+    "browserConsoleErrors": 0,
+    "sourceLimits": [
+      "Semantic Scholar title search HTTP 429",
+      "related references and citations unavailable for this newly indexed paper"
+    ],
+    "scope": "One sandbox module, two of nine text chunks; a workflow regression test, not a full-paper ten-module review."
   }
 }

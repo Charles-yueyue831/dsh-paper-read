@@ -1,6 +1,6 @@
 {
   "name": "dsh-paper-insight",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "DeepSeek Harness 文献研究插件：多源检索、证据分析、Agent 沙箱与产品创新、本地归档。",
   "type": "module",
   "main": "index.js",

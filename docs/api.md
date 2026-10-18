@@ -1,4 +1,4 @@
-# 工具接口 v0.2.0
+# 工具接口 v0.2.2
 
 实际输入契约由 `index.js` 的 Zod schema 定义，发布的机器可读副本见 [tools.json](tools.json)。下文省略统一前缀 `paper_insight_`。默认参数可以省略，运行时会补齐；所有对象拒绝未知参数，日期还校验日历有效性。
 
@@ -35,7 +35,11 @@ else console.log(result.value.reportPath);
 | explain_for_beginners | 同上 | 同 analyze，仅 beginner |
 | generate_poc | 同上 | 同 analyze，仅 decision |
 | batch | references[]，受 maxPapers 限制 | results[]；每篇成功归档或失败原因；顺序执行 |
-| library | query=""；limit=30 | runs[], scanned, scanLimit, coverage；全文子串搜索，统一大小写与空白 |
+| library | query=""；limit=30；offset=0；deleted=false；status 可选 | runs[], total, offset, limit, scanned, scanLimit, coverage；标题、备注与全文搜索 |
+| history_detail | key, runId | displayTitle, paper, record, input, error, hasDocument, canResume, canReanalyze, interrupted, completedModules |
+| history_update | key, runId；title/notes 至少一项；revision 可选 | record：更新后的详情；独立 record.json 保存修改历史 |
+| history_delete | key, runId；revision 可选 | record：标记 deletedAt 后的详情；不删除原文和报告 |
+| history_restore | key, runId；revision 可选 | record：清除 deletedAt 后的详情 |
 | report | key, runId | path, markdown |
 | export_report | key, runId；format=markdown/json | path+markdown 或 report 对象 |
 | compare_papers | reports:[{key,runId}]，2–5份分析报告 | summary, comparisons[], reports[], calls, key, runId, reportPath |
@@ -82,3 +86,11 @@ Web 插件通过实际 `webServer.register({kind:"prefix",path,handler})` 注册
 - POST `/cancel`：`{id}`；仅取消任务，不删除归档。
 
 前端通过原生 `sidebar.panellist` 与 `main` slot 注册。后台 job 是本进程内存状态；页面刷新后可用研究历史找回归档，服务器重启后从检查点继续。每个 job 仍受工作区写入策略和并发限制。
+
+## 0.2.2 兼容性与历史管理
+
+名称最多 300 字符，备注最多 5000 字符；`revision` 是乐观锁，界面会携带读取到的版本。并发编辑同一记录时，旧版本修改会被拒绝并提示刷新。所有写操作遵守会话写入权限，当前进程仍在运行的记录拒绝编辑或删除。归档目录和原报告不移动，删除是可恢复标记；默认 library、聚合和重建索引忽略已删除记录，原始报告文件仍在磁盘上。
+
+`reference` 新增完整标题输入：检索真实学术来源并只自动选取唯一完全匹配标题。`PAPER_SELECTION_REQUIRED` 错误包含 `candidates`，Web 展示候选；没有来源时明确失败。`INVALID_REFERENCE` 拒绝空输入及旧错误提示，不新增运行记录。错误对象的 key/runId 使用结构化字段，用户不需要复制进输入框。Web 不再无条件宣称已经取得材料。
+
+旧版无 checkpoint 但有 document.json 的记录可复用正文；若材料和输入都缺失，给出重新填写论文信息的说明。名称备注仅影响历史管理，不改动论文事实或既有报告。归档不要同时交由多个 Harness 进程写入；运行中保护和编辑串行化在单个宿主进程内生效。

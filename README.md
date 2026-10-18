@@ -7,25 +7,38 @@ DeepSeek Harness 的 Cordis 研究插件。将公开论文检索、证据提取�
 需要 Node.js ≥ 22.12 和 DeepSeek Harness `>=0.2.1-alpha.2 <0.3.0`。已验证的宿主及测试范围见 [验收记录](docs/acceptance-v0.2.0.md)。
 
 ```bash
-dsh plugin --profile web add dsh-paper-insight@0.2.1
+dsh plugin --profile web add dsh-paper-insight@0.2.2
 dsh web
 ```
 
 已运行的 Harness 请在当前任务完成后重启，刷新浏览器。左侧点击 **论文研究**：
 
 1. 先在 Harness 创建或打开一个会话，选择工作区与模型，并允许工作区写入。
-2. 工作台选择该会话。检索主题，或输入 URL / DOI / arXiv ID / 本地文件路径。
-3. 勾选研究模块并开始分析，查看阶段进度；可取消，之后从历史检查点继续。
-4. 在研究历史查看、搜索、重做模块或选择报告比较。分析结束后自动展示完整报告；历史报告默认进入阅读视图。报告和引用图保存在会话工作区。
+2. 工作台选择该会话。检索主题，或输入论文标题 / URL / DOI / arXiv ID / 本地文件路径。
+3. 勾选研究模块并开始分析，查看阶段进度；可取消，之后在研究历史点击“继续完成分析”。
+4. 在研究历史新建研究、查看详情、搜索、编辑名称和备注、删除和恢复记录，也可重新分析选中内容或选择报告比较。分析结束后自动展示完整报告；历史报告默认进入阅读视图。报告和引用图保存在会话工作区。
 
 Web 工作台目前支持本机 `localhost/127.0.0.1/::1` 的 Web Harness，不提供远程公开 HTTP 服务或 Electron IPC 适配。未打开任何会话时会提示先打开会话。工具本身可在 headless 使用：
 
 ```bash
-dsh plugin --profile headless add dsh-paper-insight@0.2.1
+dsh plugin --profile headless add dsh-paper-insight@0.2.2
 dsh headless "检索 ReAct 论文，执行十模块分析并保存本地；然后只重做沙箱模块，比较两个版本。"
 ```
 
 Web、headless 是不同 profile，分别安装并配置模型。模型凭据由 Harness 管理，不需给插件另配模型 API Key。
+
+## 研究历史与失败恢复（0.2.2）
+
+- **新建研究**：填写论文标题、链接或本地文件并分析，自动创建历史记录。
+- **查询历史**：按论文名、备注、报告正文搜索，按状态筛选和翻页；打开工作台自动加载当前会话历史。
+- **查看详情 / 编辑记录**：查看来源、失败原因、已完成内容；修改显示名称和个人备注。论文原名、原始材料和报告不变，修改有版本记录。
+- **删除记录 / 恢复记录**：删除先确认，移入“已删除”；勾选“查看已删除记录”并查询即可恢复。没有永久清除操作。
+- **继续完成分析**：复用已保存的材料与成功内容，只处理剩余部分。尚未取得材料时显示“重新尝试分析”。
+- **重新分析选中内容**：使用左侧勾选的分析内容生成新版本，保留旧报告。
+- 输入完整标题时检索配置的学术来源，只有标准化后完全一致的唯一候选才自动使用；不能确认时显示候选供用户选择。来源限流仍记录在检索信息中。
+- 粘贴旧错误提示会被拒绝，不会新增无效失败记录；旧的 `Pending paper` 优先显示已保存的输入标题。异常中断的记录可在当前进程没有对应运行任务时恢复。
+
+验证范围见 [0.2.2 验收记录](docs/acceptance-v0.2.2.md)。
 
 ## 报告阅读（0.2.1）
 
@@ -57,7 +70,7 @@ ACL Anthology、PMLR（ICML 等）、NeurIPS、CVF 的开放全文可直接导�
 
 ## 工具与可编程调用
 
-全部工具以 `paper_insight_` 开头。保留 0.1.x 的六个名称；新增 17 个工具。详细输入 JSON Schema 见 [tools.json](docs/tools.json)，输出、错误和调用示例见 [API 文档](docs/api.md)。
+全部工具以 `paper_insight_` 开头。共 27 个工具，保留已有工具名称。详细输入 JSON Schema 见 [tools.json](docs/tools.json)，输出、错误和调用示例见 [API 文档](docs/api.md)。
 
 | 工具后缀 | 用途 |
 |---|---|
@@ -67,6 +80,7 @@ ACL Anthology、PMLR（ICML 等）、NeurIPS、CVF 的开放全文可直接导�
 | `generate_capabilities` / `ideate_products` / `optimize_experience` | 单独生成产品能力、新产品、体验方案 |
 | `analyze_transfer` / `explain_for_beginners` / `generate_poc` | 单独迁移、教学、PoC |
 | `library` / `report` / `export_report` | 历史全文检索、报告读取、Markdown/JSON 导出 |
+| `history_detail` / `history_update` / `history_delete` / `history_restore` | 历史详情、名称备注编辑、可恢复删除及恢复 |
 | `compare_papers` / `compare_versions` | 多论文比较、同一归档的版本差异 |
 | `subscriptions` / `discover_updates` / `aggregate` | 关注主题、增量发现、本地知识聚合 |
 
@@ -90,6 +104,7 @@ ACL Anthology、PMLR（ICML 等）、NeurIPS、CVF 的开放全文可直接导�
   discovery.json             已见论文/版本指纹
   <归档key>/<runId>/
     manifest.json            状态、模型、用量、父版本、时间
+    record.json              自定义名称、备注、删除标记与修改历史
     checkpoint.json          可恢复的文档/证据/章节检查点
     events.json              阶段状态、时间、错误
     metadata.json
@@ -105,7 +120,7 @@ ACL Anthology、PMLR（ICML 等）、NeurIPS、CVF 的开放全文可直接导�
 
 论文 `canonicalKey` 根据 DOI、无版本 arXiv ID 或规范化来源生成；运行标识独立。输入尚未解析时先建立请求归档，以便网络失败也能恢复。获取完成后记录 canonicalKey；不同输入写法的运行通过该标识关联。每次续跑或重做都创建新 runId，并记录 parentRunId，绝不覆盖旧报告。
 
-`resume` 复用成功证据块和章节；`analyze` 加 `key/runId` 复用文档和证据，重新生成选定模块。`refreshResearch:true` 更新相关文献并重新生成章节。新版本提示词不会复用旧提示词生成的章节。历史 0.1.x 报告仍可读取，但没有 checkpoint 的旧报告不能直接续跑。
+`resume` 复用成功证据块和章节；`analyze` 加 `key/runId` 复用文档和证据，重新生成选定模块。`refreshResearch:true` 更新相关文献并重新生成章节。新版本提示词不会复用旧提示词生成的章节。历史 0.1.x 报告仍可读取；缺少 checkpoint 但保留 document.json 的旧记录，可复用正文重新分析。材料缺失时提示重新填写论文信息。
 
 默认只存提取文本及链接，不自动保存远程 PDF 二进制；原始本地文件不被修改。归档里引用的页码/段落用于回查原文。失败/取消也保留检查点，强制中断可能留下 running 状态，可显式续跑。
 

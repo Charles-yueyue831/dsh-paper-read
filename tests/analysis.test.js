@@ -53,7 +53,7 @@ test('failed analysis retains evidence and marks manifest failed', async t => {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), 'paper-failed-')); t.after(() => fs.rm(root, { recursive: true, force: true }));
   const service = new PaperInsight({ sandboxPolicy: { resolve: () => ({ mode: 'workspace-write', workspaceRoot: root }) } }, config,
     { sources: { resolve: async () => paper, related: async () => research }, reader: { read: async () => doc }, makeModel: () => ({ route: {}, calls: [], generate: async () => { throw new Error('model unavailable'); } }) });
-  const exec = { signal: new AbortController().signal }; await assert.rejects(service.analyze({ reference: paper.id }, exec), /已提取/);
+  const exec = { signal: new AbortController().signal }; await assert.rejects(service.analyze({ reference: paper.id }, exec), /已保存论文材料/);
   assert.equal((await service.archive(exec).list())[0].status, 'failed'); assert.equal(service.busy, false);
 });
 test('tool validation rejects invalid dates and ambiguous out-of-scope input', async () => {

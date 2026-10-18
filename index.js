@@ -170,13 +170,27 @@ export function createTools(service) {
         .object({
           query: z.string().max(600).default(""),
           limit: z.number().int().min(1).max(200).default(30),
+          offset: z.number().int().min(0).max(10000).default(0),
+          deleted: z.boolean().default(false),
+          status: z.enum(['completed','failed','cancelled','running','fetched']).optional(),
         })
         .strict(),
       (args, exec) =>
         service
           .archive(exec)
-          .search(args.query, args.limit, service.config.historyLimit),
+          .search(args.query, args.limit, service.config.historyLimit, args),
     ),
+    definition('history_detail', '查看研究记录的论文信息、备注、失败原因和可用操作。', runArgs,
+      (args, exec) => service.archive(exec).detail(args.key, args.runId)),
+    definition('history_update', '编辑研究显示名称和备注，保留修改记录；不改动论文原文或报告。',
+      z.object({ ...runFields, title: z.string().trim().min(1).max(300).optional(), notes: z.string().max(5000).optional(), revision: z.number().int().min(0).optional() }).strict().refine(v => v.title !== undefined || v.notes !== undefined, '请填写名称或备注'),
+      ({key,runId,revision,...patch}, exec) => service.archive(exec,true).updateRecord(key,runId,patch,revision)),
+    definition('history_delete', '将指定研究记录移入已删除，可恢复；不会永久删除论文或报告。',
+      z.object({...runFields, revision:z.number().int().min(0).optional()}).strict(),
+      (args,exec) => service.archive(exec,true).updateRecord(args.key,args.runId,{deletedAt:isoNow()},args.revision)),
+    definition('history_restore', '恢复已删除的研究记录。',
+      z.object({...runFields, revision:z.number().int().min(0).optional()}).strict(),
+      (args,exec) => service.archive(exec,true).updateRecord(args.key,args.runId,{deletedAt:null},args.revision)),
     definition("report", "读取已有 Markdown 报告。", runArgs, (args, exec) =>
       service.archive(exec).read(args.key, args.runId),
     ),

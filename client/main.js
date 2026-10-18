@@ -1,4 +1,5 @@
 import { createReportView } from "./report-view.js";
+import { createHistoryView, statusLabels, stageLabels, explainFailure } from "./history-view.js";
 /* Native Harness client module; React is supplied by the host to avoid duplicate runtimes. */
 window.__ModuleLoader__.load({
   id: "dsh-paper-insight",
@@ -7,7 +8,8 @@ window.__ModuleLoader__.load({
     const h = React.createElement;
     const { MarkdownText } = require("@deepseek-ai/dsh-client-ui-primitives");
     const ReportView = createReportView(React, MarkdownText);
-    const { useState, useEffect } = React;
+    const HistoryView = createHistoryView(React);
+    const { useState, useEffect, useRef } = React;
     const labels = {
       paper: "技术理解",
       "first-principles": "第一性原理",
@@ -47,6 +49,12 @@ window.__ModuleLoader__.load({
         [runs, setRuns] = useState([]),
         [selected, setSelected] = useState([]),
         [historyQuery, setHistoryQuery] = useState(""),
+        [historyStatus, setHistoryStatus] = useState(""),
+        [deleted, setDeleted] = useState(false),
+        [offset, setOffset] = useState(0),
+        [total, setTotal] = useState(0),
+        [detail, setDetail] = useState(null),
+        [submitting, setSubmitting] = useState(false),
         [report, setReport] = useState(""),
         [status, setStatus] = useState("选择会话以使用对应工作区与模型。"),
         [error, setError] = useState(""),
@@ -60,6 +68,16 @@ window.__ModuleLoader__.load({
           until: "",
           sort: "relevance",
         });
+      const submitLock = useRef(false);
+      const referenceInput = useRef(null);
+      const busy = !!job || submitting;
+      const historyArgs = (page = offset) => ({ query: historyQuery, deleted, ...(historyStatus ? {status:historyStatus} : {}), offset:page, limit:20 });
+      const repair = (input = {}) => {
+        setLocal(Boolean(input.file)); setReference(input.file || input.reference || '');
+        setReport(''); setDetail(null); setError('');
+        referenceInput.current?.scrollIntoView({block:'center'}); referenceInput.current?.focus();
+        setStatus('填写论文信息，然后点击“开始分析”。新的分析会保留在研究历史中。');
+      };
       const refresh = () =>
         api("/sessions")
           .then((v) => {
@@ -75,6 +93,10 @@ window.__ModuleLoader__.load({
         refresh();
       }, []);
       useEffect(() => {
+        setRuns([]); setSelected([]); setReport(''); setDetail(null); setPapers([]); setOffset(0);
+        if (session) run('library', historyArgs(0));
+      }, [session]);
+      useEffect(() => {
         if (!job) return;
         let stopped = false;
         let timer;
@@ -84,40 +106,42 @@ window.__ModuleLoader__.load({
             if (stopped) return;
             setStatus(
               value.status === "running"
-                ? `正在处理：${value.progress?.stage || "starting"} ${value.progress?.completed || ""}${value.progress?.total ? "/" + value.progress.total : ""}`
+                ? `正在处理：${stageLabels[value.progress?.stage] || "分析中"} ${value.progress?.completed || ""}${value.progress?.total ? "/" + value.progress.total : ""}`
                 : value.status === "completed"
                   ? "已完成，结果已返回。"
-                  : value.status,
+                  : statusLabels[value.status] || "任务未完成",
             );
             if (value.status === "running") {
               timer = setTimeout(poll, 1200);
               return;
             }
+            const queueHistory = async () => {
+              const next = await api('/run', {sessionId:job.sessionId, tool:'paper_insight_library', args:historyArgs()});
+              if (!stopped) setJob({id:next.id,action:'library',sessionId:job.sessionId});
+            };
             if (value.error) {
-              setJob(null);
-              setError(value.error.message);
-              if (value.error.key)
-                setRuns((old) => [
-                  {
-                    key: value.error.key,
-                    runId: value.error.runId,
-                    status: value.status,
-                    paper: { title: "可从检查点续跑" },
-                  },
-                  ...old,
-                ]);
+              setError(explainFailure(value.error.message));
+              if (value.error.candidates) setPapers(value.error.candidates);
+              if (value.error.key) await queueHistory();
+              else { setJob(null); submitLock.current=false; }
               return;
             }
             const r = value.result;
             if (job.action === "search") setPapers(r.papers);
-            else if (job.action === "library") setRuns(r.runs);
+            else if (job.action === "library") { setRuns(r.runs); setTotal(r.total || 0); setSelected([]); }
+            else if (job.action === "history_detail") setDetail(r);
+            else if (job.action.startsWith('history_')) {
+              if (job.action === 'history_delete') setReport('');
+              if (r.record) setDetail(r.record);
+              await queueHistory(); return;
+            }
             else if (job.action === "subscriptions") {
               setTopics(r.topics.join("\n"));
               setStatus("关注主题已保存；由 Harness 定时任务触发增量发现。");
             } else if (job.action === "discover_updates") {
               setPapers(r.newPapers);
               setStatus(`发现 ${r.newPapers.length} 篇新增或更新论文。`);
-            } else if (r.markdown) setReport(r.markdown);
+            } else if (r.markdown) { setReport(r.markdown); if(job.reloadHistory) { await queueHistory(); return; } }
             else if (r.reportPath) {
               setStatus("分析已完成，正在读取完整报告…");
               const loaded = await api("/run", {
@@ -129,22 +153,12 @@ window.__ModuleLoader__.load({
               setJob({
                 id: loaded.id,
                 action: "report",
+                reloadHistory: true,
                 sessionId: job.sessionId,
               });
-              setRuns((old) => [
-                {
-                  key: r.key,
-                  runId: r.runId,
-                  status: "completed",
-                  paper: { title: r.title || "比较报告" },
-                  type:
-                    job.action === "compare_papers" ? "comparison" : undefined,
-                },
-                ...old,
-              ]);
               return;
             } else setReport(JSON.stringify(r, null, 2));
-            setJob(null);
+            setJob(null); submitLock.current=false;
             if (r.errors?.length)
               setError(
                 "部分来源未返回结果：" +
@@ -153,7 +167,7 @@ window.__ModuleLoader__.load({
           } catch (e) {
             if (!stopped) {
               setError(e.message);
-              setJob(null);
+              setJob(null); submitLock.current=false;
             }
           }
         };
@@ -164,7 +178,9 @@ window.__ModuleLoader__.load({
         };
       }, [job]);
       const run = async (action, args = {}) => {
+        if (submitLock.current) return;
         setError("");
+        if (action === 'analyze' && !modules.length) { setError('请至少选择一项分析内容。'); return; }
         if (!session) {
           setError(
             "请先在 Harness 打开一个会话并配置模型和工作区，再点击刷新会话。",
@@ -172,6 +188,7 @@ window.__ModuleLoader__.load({
           return;
         }
         try {
+          submitLock.current=true; setSubmitting(true);
           setStatus("提交中…");
           const value = await api("/run", {
             sessionId: session,
@@ -180,8 +197,8 @@ window.__ModuleLoader__.load({
           });
           setJob({ id: value.id, action, sessionId: session });
         } catch (e) {
-          setError(e.message);
-        }
+          setError(e.message); submitLock.current=false;
+        } finally { setSubmitting(false); }
       };
       const button = (text, click, primary = false) =>
         h(
@@ -189,7 +206,7 @@ window.__ModuleLoader__.load({
           {
             type: "button",
             onClick: click,
-            disabled: !!job,
+            disabled: busy,
             className: primary ? "pi-primary" : "",
           },
           text,
@@ -199,13 +216,15 @@ window.__ModuleLoader__.load({
           "label",
           null,
           label,
-          h("input", { type, value, onChange: (e) => change(e.target.value) }),
+          h("input", { type, value, ...(change===setReference ? {ref:referenceInput} : {}), onChange: (e) => change(e.target.value) }),
         );
-      const analyze = (ref) =>
-        run("analyze", {
-          ...(local ? { file: ref } : { reference: ref }),
+      const analyze = (ref) => {
+        if (!ref.trim()) { setError(local ? '请填写工作区内的文件路径。' : '请填写论文标题、链接或编号。'); return; }
+        return run("analyze", {
+          ...(local ? { file: ref.trim() } : { reference: ref.trim() }),
           modules,
         });
+      };
       return h(
         "section",
         { className: "pi-workbench", "aria-label": "论文研究工作台" },
@@ -220,6 +239,7 @@ window.__ModuleLoader__.load({
             {
               "aria-label": "研究会话",
               value: session,
+              disabled: busy,
               onChange: (e) => setSession(e.target.value),
             },
             h("option", { value: "" }, "请选择会话"),
@@ -332,14 +352,14 @@ window.__ModuleLoader__.load({
                 "使用工作区内本地文件",
               ),
               input(
-                local ? "PDF / 文本相对路径" : "论文 URL / DOI / arXiv ID",
+                local ? "PDF / 文本相对路径" : "论文标题 / 链接 / DOI / arXiv 编号",
                 reference,
                 setReference,
               ),
               h(
                 "p",
                 { className: "pi-small" },
-                "选择本次研究模块。完整分析可能耗时数分钟，并使用当前会话模型额度。",
+                "勾选本次想了解的内容。完整分析可能耗时数分钟，并使用当前会话模型额度。",
               ),
               h(
                 "div",
@@ -452,66 +472,21 @@ window.__ModuleLoader__.load({
               "section",
               { className: "pi-card" },
               h("h2", null, "研究历史"),
-              input("全文搜索历史报告", historyQuery, setHistoryQuery),
-              h(
-                "div",
-                { className: "pi-actions" },
-                button("查询历史", () =>
-                  run("library", { query: historyQuery }),
-                ),
-                button("比较所选论文", () =>
-                  run("compare_papers", { reports: selected }),
-                ),
-              ),
-              ...runs.map((r, i) =>
-                h(
-                  "article",
-                  { key: r.runId + "-" + i, className: "pi-result" },
-                  h(
-                    "label",
-                    null,
-                    h("input", {
-                      type: "checkbox",
-                      disabled: r.status !== "completed" || Boolean(r.type),
-                      checked: selected.some((s) => s.runId === r.runId),
-                      onChange: (e) =>
-                        setSelected(
-                          e.target.checked
-                            ? [...selected, { key: r.key, runId: r.runId }]
-                            : selected.filter((s) => s.runId !== r.runId),
-                        ),
-                    }),
-                    r.paper?.title || r.key,
-                  ),
-                  h(
-                    "div",
-                    { className: "pi-small" },
-                    r.status + " · " + r.runId,
-                  ),
-                  h(
-                    "div",
-                    { className: "pi-actions" },
-                    r.status === "completed" && r.type !== "discovery"
-                      ? button("查看报告", () =>
-                          run("report", { key: r.key, runId: r.runId }),
-                        )
-                      : !r.type
-                        ? button("从检查点继续", () =>
-                            run("resume", { key: r.key, runId: r.runId }),
-                          )
-                        : null,
-                    !r.type
-                      ? button("重做所选模块", () =>
-                          run("analyze", {
-                            key: r.key,
-                            runId: r.runId,
-                            modules,
-                          }),
-                        )
-                      : null,
-                  ),
-                ),
-              ),
+              h('p',{className:'pi-small'},'继续完成分析：保留已完成的内容，接着完成剩余部分。重新分析选中内容：按左侧勾选的内容生成新版本，旧报告仍保留。'),
+              input("搜索论文、备注或报告正文", historyQuery, setHistoryQuery),
+              h('label',null,'历史状态',h('select',{value:historyStatus,onChange:e=>setHistoryStatus(e.target.value)},
+                h('option',{value:''},'全部状态'),...Object.entries(statusLabels).map(([value,label])=>h('option',{key:value,value},label)))),
+              h('label',null,h('input',{type:'checkbox',checked:deleted,onChange:e=>setDeleted(e.target.checked)}),'查看已删除记录'),
+              h('div',{className:'pi-actions'},
+                button('新建研究',()=>repair()),
+                button('查询历史',()=>{setOffset(0);setDetail(null);run('library',historyArgs(0));}),
+                button('比较所选论文',()=>{if(selected.length<2){setError('请先选择至少两篇已完成的论文。');return;}run('compare_papers',{reports:selected});})),
+              h('p',{className:'pi-small'},`共 ${total} 条匹配记录`),
+              !runs.length ? h('p',null,'暂无匹配记录，可新建研究或调整查询条件。') : null,
+              h(HistoryView,{runs,selected,setSelected,detail,setDetail,run,busy,modules,onRepair:repair}),
+              h('div',{className:'pi-actions'},
+                offset>0 ? button('上一页',()=>{setOffset(Math.max(0,offset-20));run('library',historyArgs(Math.max(0,offset-20)));}) : null,
+                offset+20<total ? button('下一页',()=>{setOffset(offset+20);run('library',historyArgs(offset+20));}) : null),
               h(
                 "section",
                 { className: "pi-card" },

@@ -7,7 +7,7 @@ import {
 let diagramModule;
 const loadDiagram = () =>
   (diagramModule ||= import(
-    "/api/paper-insight/assets/diagram.js?v=0.2.1"
+    "/api/paper-insight/assets/diagram.js?v=0.2.2"
   ).catch((error) => {
     diagramModule = null;
     throw error;
