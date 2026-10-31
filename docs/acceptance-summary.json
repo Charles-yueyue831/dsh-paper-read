@@ -1,7 +1,7 @@
 {
   "version": "0.2.5",
   "passed": false,
-  "status": "blocked-live-model-quota",
+  "status": "release-authorized-with-live-model-limitation",
   "checkedAt": "2026-10-31",
   "tests": 89,
   "testsPassed": 89,
@@ -31,5 +31,5 @@
     "paper": "arxiv:2210.03629",
     "error": "QUOTA / HTTP 402"
   },
-  "published": false
+  "releaseAuthorized": true
 }
