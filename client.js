@@ -29,6 +29,48 @@
     mod
   ));
 
+  // client/workbench-model.js
+  var modes = { quick: ["paper", "first-principles", "beginner"], deep: ["paper", "first-principles", "landscape", "transfer", "beginner"], product: ["paper", "sandbox", "features", "products", "experience", "decision"] };
+  var modeLabels = { quick: "\u5FEB\u901F\u9605\u8BFB", deep: "\u6DF1\u5EA6\u7814\u7A76", product: "\u4EA7\u54C1\u7814\u7A76" };
+  var views = { discover: "\u53D1\u73B0\u8BBA\u6587", create: "\u521B\u5EFA\u7814\u7A76", report: "\u7814\u7A76\u62A5\u544A", history: "\u7814\u7A76\u5386\u53F2" };
+  function precheck({ session, reference, modules, maxCalls, busy }) {
+    if (!session) return "\u8BF7\u5148\u9009\u62E9\u5DF2\u914D\u7F6E\u6A21\u578B\u4E0E\u5DE5\u4F5C\u533A\u7684\u4F1A\u8BDD\u3002";
+    if (!reference.trim()) return "\u8BF7\u586B\u5199\u8BBA\u6587\u4FE1\u606F\u6216\u5DE5\u4F5C\u533A\u5185\u6587\u4EF6\u8DEF\u5F84\u3002";
+    if (!modules.length) return "\u8BF7\u81F3\u5C11\u9009\u62E9\u4E00\u9879\u7814\u7A76\u5185\u5BB9\u3002";
+    if (!Number.isInteger(Number(maxCalls)) || Number(maxCalls) < 1 || Number(maxCalls) > 1e3) return "\u6A21\u578B\u8C03\u7528\u6B21\u6570\u987B\u4E3A 1\u20131000 \u7684\u6574\u6570\u3002";
+    if (busy) return "\u5F53\u524D\u4EFB\u52A1\u5B8C\u6210\u6216\u53D6\u6D88\u540E\u624D\u80FD\u5F00\u59CB\u53E6\u4E00\u9879\u4EFB\u52A1\u3002";
+    return "";
+  }
+  function safeSource(url) {
+    try {
+      const u = new URL(url);
+      return u.protocol === "https:" ? u.href : null;
+    } catch {
+      return null;
+    }
+  }
+  function progressCount(p) {
+    return Number.isInteger(p?.completed) && Number.isInteger(p?.total) && p.total > 0 && p.completed >= 0 && p.completed <= p.total ? `${p.completed}/${p.total}` : "";
+  }
+  function evidenceFor(report, ids) {
+    const found = [];
+    for (const e of report.evidence || []) for (const f of e.facts || []) if (ids.includes(f.id)) found.push({ id: f.id, text: f.quote, locator: e.locator, url: report.paper?.url });
+    for (const kind of ["references", "citations", "discovery"]) for (const p of report.research?.[kind] || []) if (ids.includes(p.evidenceId)) found.push({ id: p.evidenceId, text: p.abstract || "\u4EC5\u6709\u51FA\u7248\u5143\u6570\u636E\uFF0C\u4E0D\u80FD\u636E\u6B64\u9A8C\u8BC1\u6280\u672F\u6548\u679C\u3002", locator: p.title, url: p.url });
+    return found;
+  }
+
+  // client/workbench-style.js
+  var workbenchStyle = `
+.pi-workbench{container-type:inline-size;container-name:paper; padding:24px;overflow:auto}
+.pi-workbench *{box-sizing:border-box}.pi-workbench button{min-height:40px}.pi-workbench :focus-visible{outline:2px solid var(--dsw-alias-brand-primary,#3566d6);outline-offset:3px}
+.pi-tabs{display:flex;gap:8px;overflow:auto;margin:24px 0 16px;border-bottom:1px solid var(--dsw-alias-border-l2,#ddd);padding-bottom:12px}.pi-tabs button{white-space:nowrap}.pi-tabs [aria-selected=true]{background:var(--dsw-alias-brand-primary,#3566d6);color:white}
+.pi-panel[hidden]{display:none}.pi-columns{max-width:1440px;margin:auto;display:grid;grid-template-columns:300px minmax(0,1fr);gap:24px}.pi-columns>*{min-width:0}.pi-card{border-radius:12px;margin-bottom:16px}.pi-status{border-left:3px solid var(--dsw-alias-brand-primary,#3566d6);padding:12px 16px;margin:16px 0;background:var(--dsw-alias-bg-layer-2);border-radius:8px}.pi-status p{margin:4px 0}.pi-preview{align-self:start;position:sticky;top:12px}.pi-report-card{max-width:1200px;margin:auto}.pi-workbench fieldset{border:1px solid var(--dsw-alias-border-l2,#ddd);border-radius:8px;margin:16px 0;padding:12px}.pi-workbench legend{padding:0 6px}.pi-workbench summary{cursor:pointer;padding:8px 0}.pi-result{overflow-wrap:anywhere}.pi-result h3{margin:8px 0}.pi-result p{max-width:900px}.pi-drawer{position:fixed;inset:0 0 0 auto;margin:0;width:min(620px,90vw);max-width:100vw;height:100dvh;max-height:100dvh;border:1px solid var(--dsw-alias-border-l2,#ddd);border-radius:16px 0 0 16px;padding:24px;overflow:auto;background:var(--dsw-alias-bg-layer-1,#fff);color:var(--dsw-alias-label-primary,#222);font:14px/1.7 system-ui}.pi-drawer::backdrop{background:#0008}.pi-drawer header{display:flex;align-items:center;justify-content:space-between;gap:12px}.pi-drawer blockquote{margin:12px 0;padding:12px;border-left:3px solid #3566d6;white-space:pre-wrap;overflow-wrap:anywhere}.pi-drawer input,.pi-drawer select,.pi-drawer textarea{width:100%;padding:10px;margin:8px 0;color:inherit;background:var(--dsw-alias-bg-layer-2,#fff);border:1px solid var(--dsw-alias-border-l2,#bbb);border-radius:8px}.pi-drawer button{padding:10px;border-radius:8px;color:inherit;background:var(--dsw-alias-bg-layer-3,#eee);border:1px solid var(--dsw-alias-border-l2,#bbb)}.pi-metrics{display:flex;gap:12px;flex-wrap:wrap}.pi-metrics>span{padding:12px;background:var(--dsw-alias-bg-layer-3);border-radius:8px}.pi-opportunity-map{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}.pi-opportunity-map>div{padding:12px;border:1px solid var(--dsw-alias-border-l2,#ddd);border-radius:8px;overflow-wrap:anywhere}
+@container paper (min-width:960px) and (max-width:1279px){.pi-reading-layout{grid-template-columns:170px minmax(0,1fr)}}
+@container paper (max-width:959px){.pi-columns{grid-template-columns:1fr}.pi-preview{position:static}.pi-reading-layout{grid-template-columns:1fr}.pi-opportunity-map{grid-template-columns:1fr 1fr}}
+@container paper (max-width:599px){.pi-drawer{width:100vw;border-radius:0;padding:16px}.pi-tabs{gap:4px}.pi-card{padding:12px}.pi-checks{grid-template-columns:1fr}.pi-opportunity-map{grid-template-columns:1fr}.pi-actions>button{flex:1}.pi-report-card{padding:12px}}
+@media(max-width:600px){.pi-drawer{width:100vw;border-radius:0;padding:16px}}
+`;
+
   // client/reading-style.js
   var readingStyle = `
 .pi-report-card{grid-column:1/-1;min-width:0}
@@ -37,7 +79,7 @@
 .pi-nav-group{margin:0 0 20px}.pi-nav-group strong{display:block;font-size:12px;opacity:.65;margin-bottom:5px}
 .pi-workbench .pi-nav-group button{display:block;border:0;background:transparent;text-align:left;width:100%;font-size:13px;padding:6px 8px;border-radius:6px}
 .pi-workbench .pi-nav-group button:hover,.pi-workbench .pi-nav-group button:focus-visible{background:var(--dsw-alias-bg-layer-3);color:#638cf0}
-.pi-report-body{min-width:0;width:100%;max-width:960px;margin:0 auto;font-size:16px;line-height:1.85}
+.pi-report-body{min-width:0;width:100%;max-width:900px;margin:0 auto;font-size:16px;line-height:1.85}
 .pi-report-body>div>h1,.pi-report-body h1{font-size:clamp(24px,3vw,36px);line-height:1.3;letter-spacing:-.7px;margin:12px 0 24px}
 .pi-report-body .pi-chapter{padding:28px 0;border-top:1px solid var(--dsw-alias-border-l2,#ddd);margin-top:30px}
 .pi-report-body .pi-chapter h2{border:0;padding:0;margin:0 0 18px;font-size:25px;line-height:1.4}
@@ -54,8 +96,8 @@
 .pi-diagram-svg svg{max-width:100%;min-width:0;width:100%;height:auto;max-height:620px;margin:auto}.pi-diagram-svg{max-height:760px;overflow:auto}
 .pi-diagram-zoom svg{max-width:none;max-height:none;width:auto;min-width:100%}.pi-diagram>button{margin-top:12px;font-size:12px}
 .pi-report-toolbar{padding-bottom:16px;border-bottom:1px solid var(--dsw-alias-border-l2,#ddd)}.pi-report-toolbar .pi-actions{margin-top:0}
-@media(max-width:1000px){.pi-reading-layout{grid-template-columns:1fr}.pi-reading-nav{position:static;max-height:none;border:0;padding:0;display:flex;flex-wrap:wrap;gap:12px}.pi-reading-nav>.pi-eyebrow{width:100%}.pi-nav-group{flex:1 1 140px;margin:0}.pi-report-body{max-width:100%}}
-@media(max-width:600px){.pi-report-card{padding:14px}.pi-report-body{font-size:15px}.pi-report-body .pi-overview{padding:16px}.pi-report-body .pi-chapter h2{font-size:22px}.pi-report-toolbar button{font-size:12px;padding:6px 9px}}
+@container paper (max-width:959px){.pi-reading-layout{grid-template-columns:1fr}.pi-reading-nav{position:static;max-height:none;border:0;padding:0;display:flex;flex-wrap:wrap;gap:12px}.pi-reading-nav>.pi-eyebrow{width:100%}.pi-nav-group{flex:1 1 140px;margin:0}.pi-report-body{max-width:100%}}
+@container paper (max-width:599px){.pi-report-card{padding:14px}.pi-report-body{font-size:15px}.pi-report-body .pi-overview{padding:16px}.pi-report-body .pi-chapter h2{font-size:22px}.pi-report-toolbar button{font-size:12px;padding:6px 9px}}
 `;
 
   // client/report-utils.js
@@ -384,92 +426,124 @@
     };
   }
 
+  // client/drawer.js
+  function createDrawer(React) {
+    const h = React.createElement;
+    return function Drawer({ title, onClose, children }) {
+      const ref = React.useRef(null), close = React.useRef(onClose);
+      close.current = onClose;
+      React.useEffect(() => {
+        const trigger = document.activeElement, d = ref.current;
+        d.showModal();
+        return () => {
+          d.close();
+          if (trigger?.isConnected) trigger.focus();
+        };
+      }, []);
+      return h("dialog", { ref, className: "pi-drawer", "aria-label": title, onCancel: (e) => {
+        e.preventDefault();
+        close.current();
+      } }, h("header", null, h("h2", null, title), h("button", { type: "button", onClick: onClose, "aria-label": "\u5173\u95ED" + title }, "\u5173\u95ED")), children);
+    };
+  }
+
   // client/research-controls.js
   var chapterLabels = { abstract: "\u6458\u8981", introduction: "\u5F15\u8A00", "related-work": "\u76F8\u5173\u5DE5\u4F5C", methods: "\u65B9\u6CD5", experiments: "\u5B9E\u9A8C", results: "\u7ED3\u679C", limitations: "\u5C40\u9650", conclusion: "\u7ED3\u8BBA", references: "\u53C2\u8003\u6587\u732E", unknown: "\u672A\u8BC6\u522B\u7AE0\u8282" };
   var reviewLabels = { direct: "\u6709\u76F4\u63A5\u4F9D\u636E", manual: "\u9700\u4EBA\u5DE5\u6838\u67E5", insufficient: "\u8BC1\u636E\u4E0D\u8DB3" };
-  var opportunityFields = { users: "\u76EE\u6807\u7528\u6237", scenario: "\u4F7F\u7528\u573A\u666F", painPoint: "\u95EE\u9898", mechanism: "\u673A\u5236", technicalCapability: "\u6280\u672F\u80FD\u529B", productCapability: "\u4EA7\u54C1\u80FD\u529B", feature: "\u529F\u80FD", hypothesis: "\u5047\u8BBE", value: "\u4EF7\u503C", feasibility: "\u53EF\u884C\u6027", cost: "\u6210\u672C", risks: "\u98CE\u9669", metrics: "\u6307\u6807", dependencies: "\u4F9D\u8D56", journey: "\u7528\u6237\u6D41\u7A0B", acceptance: "\u9A8C\u6536\u6807\u51C6", steps: "\u5B9E\u9A8C\u6B65\u9AA4", stopConditions: "\u505C\u6B62\u6761\u4EF6" };
+  var kindLabels = { "paper-fact": "\u8BBA\u6587\u4E8B\u5B9E", "literature-fact": "\u5916\u90E8\u7814\u7A76\u4E8B\u5B9E", inference: "\u5408\u7406\u63A8\u65AD", proposal: "\u4EA7\u54C1\u5047\u8BBE", unknown: "\u8BC1\u636E\u4E0D\u8DB3" };
+  var fields = { users: "\u76EE\u6807\u7528\u6237", scenario: "\u4F7F\u7528\u573A\u666F", painPoint: "\u7528\u6237\u95EE\u9898", mechanism: "\u8BBA\u6587\u673A\u5236", technicalCapability: "\u6280\u672F\u80FD\u529B", productCapability: "\u4EA7\u54C1\u80FD\u529B", feature: "\u7528\u6237\u529F\u80FD", hypothesis: "\u9A8C\u8BC1\u5047\u8BBE", value: "\u7528\u6237\u4EF7\u503C", feasibility: "\u53EF\u884C\u6027", cost: "\u6210\u672C", risks: "\u98CE\u9669", metrics: "\u9A8C\u8BC1\u6307\u6807", dependencies: "\u524D\u63D0\u4E0E\u4F9D\u8D56", journey: "\u7528\u6237\u6D41\u7A0B", acceptance: "\u6210\u529F\u6807\u51C6", steps: "\u5B9E\u9A8C\u6B65\u9AA4\u4E0E\u5BF9\u7167", stopConditions: "\u505C\u6B62\u6761\u4EF6" };
   function createResearchControls(React) {
-    const h = React.createElement;
-    return function ResearchControls({ bundle, run, busy }) {
-      const [chapters, setChapters] = React.useState([]), [editing, setEditing] = React.useState(null);
+    const h = React.createElement, Drawer = createDrawer(React);
+    return function ResearchControls({ bundle, run, busy, part = "overview" }) {
+      const [chapters, setChapters] = React.useState([]), [editing, setEditing] = React.useState(null), [evidence, setEvidence] = React.useState(null), [query, setQuery] = React.useState("");
       React.useEffect(() => {
         setChapters([]);
         setEditing(null);
-      }, [bundle?.runId, bundle?.annotations?.revision]);
-      if (!Array.isArray(bundle?.reportData?.sections)) return null;
+        setEvidence(null);
+      }, [bundle?.key, bundle?.runId, bundle?.annotations?.revision]);
+      if (!Array.isArray(bundle?.reportData?.sections)) return part === "overview" ? h("p", null, "\u6B64\u62A5\u544A\u6CA1\u6709\u7ED3\u6784\u5316\u7814\u7A76\u6570\u636E\uFF0C\u53EF\u7EE7\u7EED\u9605\u8BFB\u539F\u62A5\u544A\u3002") : null;
       const r = bundle.reportData, args = { key: bundle.key, runId: bundle.runId }, a = bundle.annotations || { revision: 0, entries: [] };
+      const findings = r.sections.flatMap((s) => s.findings || []);
       const button = (text, fn) => h("button", { type: "button", disabled: busy, onClick: fn }, text);
       const edit = (type, id) => {
         const prior = a.entries.find((e) => e.type === type && e.targetId === id);
         setEditing({ type, targetId: id, notes: prior?.notes || "", ...type === "finding" ? { status: prior?.status || "pending" } : { priority: prior?.priority || "medium" } });
       };
+      const show = (f) => {
+        setEvidence(f);
+        if (f.id) edit("finding", f.id);
+      };
+      const form = editing ? h(
+        "form",
+        { onSubmit: (e) => {
+          e.preventDefault();
+          run("annotate", { ...args, ...editing, reportHash: bundle.reportHash, revision: a.revision });
+        } },
+        h("h3", null, "\u6211\u7684\u610F\u89C1\uFF08\u72EC\u7ACB\u4FDD\u5B58\uFF0C\u4E0D\u66F4\u6539\u539F\u62A5\u544A\uFF09"),
+        h("label", null, editing.type === "finding" ? "\u590D\u6838\u72B6\u6001" : "\u4F18\u5148\u7EA7", h("select", { value: editing.status || editing.priority, onChange: (e) => setEditing({ ...editing, [editing.type === "finding" ? "status" : "priority"]: e.target.value }) }, ...Object.entries(editing.type === "finding" ? { pending: "\u5F85\u6838\u67E5", confirmed: "\u5DF2\u786E\u8BA4", questioned: "\u6709\u7591\u95EE" } : { high: "\u9AD8", medium: "\u4E2D", low: "\u4F4E" }).map(([v, l]) => h("option", { key: v, value: v }, l)))),
+        h("label", null, "\u5907\u6CE8", h("textarea", { value: editing.notes, maxLength: 5e3, onChange: (e) => setEditing({ ...editing, notes: e.target.value }) })),
+        h("button", { disabled: busy, type: "submit" }, "\u4FDD\u5B58\u610F\u89C1")
+      ) : null;
+      if (part === "overview") return h(
+        "section",
+        { "aria-label": "\u62A5\u544A\u6982\u89C8" },
+        h("h3", null, r.paper?.title),
+        h("p", { className: "pi-small" }, `\u62A5\u544A\u7248\u672C ${bundle.runId} \xB7 ${r.createdAt || "\u65F6\u95F4\u672A\u8BB0\u5F55"} \xB7 \u6A21\u578B ${typeof r.model === "string" ? r.model : JSON.stringify(r.model || "\u672A\u8BB0\u5F55")}`),
+        h("div", { className: "pi-metrics" }, h("span", null, `\u6750\u6599\uFF1A${{ abstract: "\u4EC5\u6458\u8981", "abstract-only": "\u4EC5\u6458\u8981", "partial-text": "\u90E8\u5206\u6B63\u6587", "extracted-text": "\u63D0\u53D6\u6B63\u6587", "full-text": "\u53EF\u8BBF\u95EE\u6B63\u6587", full: "\u53EF\u8BBF\u95EE\u6B63\u6587", partial: "\u90E8\u5206\u6B63\u6587" }[r.coverage] || r.coverage || "\u672A\u8BB0\u5F55"}`), h("span", null, r.selection ? `\u5B9E\u9645\u5904\u7406 ${r.selection.processedChunks}/${r.selection.totalChunks} \u4E2A\u7247\u6BB5` : "\u65E7\u62A5\u544A\u672A\u8BB0\u5F55\u8986\u76D6"), h("span", null, `\u9700\u6838\u67E5 ${findings.filter((f) => f.review?.status !== "direct").length} \u6761\u7ED3\u8BBA`)),
+        h("p", null, "\u6587\u672C\u8986\u76D6\u4E0D\u4EE3\u8868\u7406\u89E3\u51C6\u786E\u7387\uFF1B\u81EA\u52A8\u590D\u6838\u4E0D\u80FD\u66FF\u4EE3\u4EBA\u5DE5\u9A8C\u8BC1\u3002"),
+        ...(r.warnings || []).map((w, i) => h("p", { key: i, className: "pi-note" }, typeof w === "string" ? w : JSON.stringify(w))),
+        ...(r.research?.errors || []).map((e, i) => h("p", { key: i, className: "pi-note" }, `\u6765\u6E90\u9650\u5236\uFF1A${e.source || ""} ${e.error || e.message || ""}`)),
+        h(
+          "details",
+          null,
+          h("summary", null, "\u67E5\u770B\u7AE0\u8282\u8986\u76D6\u4E0E\u7528\u91CF"),
+          r.selection?.chapters ? r.selection.chapters.filter((c) => c.total).map((c) => h("label", { key: c.id }, c.processed < c.total ? h("input", { type: "checkbox", disabled: busy, checked: chapters.includes(c.id), onChange: (e) => setChapters(e.target.checked ? [...chapters, c.id] : chapters.filter((x) => x !== c.id)) }) : null, `${chapterLabels[c.id] || c.id}\uFF1A${c.processed}/${c.total} `, h("progress", { max: c.total, value: c.processed, "aria-label": chapterLabels[c.id] || c.id }))) : h("p", null, "\u6B64\u7248\u672C\u672A\u8BB0\u5F55\u7AE0\u8282\u8986\u76D6\u3002"),
+          chapters.length ? button("\u8865\u5145\u9605\u8BFB\u6240\u9009\u7AE0\u8282\uFF08\u65B0\u7248\u672C\uFF09", () => run("analyze", { ...args, supplementChapters: chapters, modules: r.requestedModules })) : null,
+          r.usage ? h("p", null, `\u7D2F\u8BA1 ${r.usage.calls} \u6B21\u8C03\u7528 \xB7 \u5DF2\u77E5 ${r.usage.knownTokens} Token \xB7 ${r.usage.unknownUsageCalls} \u6B21\u7528\u91CF\u672A\u77E5 \xB7 \u8D39\u7528\u672A\u77E5`) : h("p", null, "\u6A21\u578B\u7528\u91CF\u672A\u8BB0\u5F55\u3002")
+        )
+      );
       return h(
         "section",
-        { "aria-label": "\u7814\u7A76\u8986\u76D6\u4E0E\u590D\u6838", className: "pi-note" },
-        h("h3", null, "\u6750\u6599\u8986\u76D6\u4E0E\u7814\u7A76\u7528\u91CF"),
-        r.selection?.chapters ? h(
-          React.Fragment,
-          null,
-          h("p", null, `\u5DF2\u5904\u7406 ${r.selection.processedChunks}/${r.selection.totalChunks} \u4E2A\u7247\u6BB5\u3002\u6587\u672C\u8986\u76D6\u4E0D\u4EE3\u8868\u7406\u89E3\u51C6\u786E\u7387\u3002`),
-          ...r.selection.chapters.filter((c) => c.total).map((c) => h(
-            "label",
-            { key: c.id },
-            c.processed < c.total ? h("input", { type: "checkbox", disabled: busy, checked: chapters.includes(c.id), onChange: (e) => setChapters(e.target.checked ? [...chapters, c.id] : chapters.filter((x) => x !== c.id)) }) : null,
-            `${chapterLabels[c.id]}\uFF1A${c.processed}/${c.total} `,
-            h("progress", { max: c.total, value: c.processed, "aria-label": chapterLabels[c.id] })
-          )),
-          chapters.length ? button("\u8865\u5145\u9605\u8BFB\u6240\u9009\u7AE0\u8282", () => run("analyze", { ...args, supplementChapters: chapters, modules: r.requestedModules })) : null
-        ) : h("p", null, "\u6B64\u7248\u672C\u672A\u8BB0\u5F55\u7AE0\u8282\u5904\u7406\u8986\u76D6\u3002"),
-        r.usage ? h(
-          React.Fragment,
-          null,
-          h("p", null, `\u7D2F\u8BA1 ${r.usage.calls} \u6B21\u8C03\u7528 \xB7 \u5DF2\u77E5 ${r.usage.knownTokens} Token \xB7 ${r.usage.unknownUsageCalls} \u6B21\u7528\u91CF\u672A\u77E5 \xB7 \u8D39\u7528\u672A\u77E5`),
-          ...Object.entries(r.usage.stages).map(([id, s]) => h("p", { key: id }, `${{ extraction: "\u8BC1\u636E\u63D0\u53D6", generation: "\u62A5\u544A\u64B0\u5199", repair: "\u683C\u5F0F\u4FEE\u590D", review: "\u8BC1\u636E\u590D\u6838" }[id] || "\u5176\u4ED6"}\uFF1A${s.calls} \u6B21\uFF0C${(s.durationMs / 1e3).toFixed(1)} \u79D2`))
-        ) : null,
-        h(
-          "details",
-          null,
-          h("summary", null, "\u68C0\u67E5\u7ED3\u8BBA\u4F9D\u636E\u4E0E\u4EBA\u5DE5\u590D\u6838"),
-          h("p", null, "\u81EA\u52A8\u5BA1\u67E5\u4EC5\u8F85\u52A9\u53D1\u73B0\u8BC1\u636E\u7F3A\u53E3\uFF1B\u4EBA\u5DE5\u786E\u8BA4\u4E0D\u6539\u53D8\u6A21\u578B\u539F\u59CB\u5206\u7C7B\u3002"),
-          ...r.sections.flatMap((s) => s.findings.filter((f) => f.id).map((f) => h(
-            "article",
-            { key: f.id, className: "pi-result" },
-            h("p", null, f.statement),
-            h("p", null, `${reviewLabels[f.review?.status] || "\u672A\u5BA1\u67E5"}\uFF1A${f.review?.reason || "\u672A\u8BB0\u5F55"}`),
-            h("p", null, `\u6765\u6E90\uFF1A${f.evidenceIds.join("\u3001") || "\u65E0\u76F4\u63A5\u4F9D\u636E"}`),
-            ...a.entries.filter((e) => e.type === "finding" && e.targetId === f.id).map((e) => h("p", { key: e.targetId }, `\u6211\u7684\u590D\u6838\uFF1A${{ confirmed: "\u5DF2\u786E\u8BA4", questioned: "\u6709\u7591\u95EE", pending: "\u5F85\u6838\u67E5" }[e.status]} \xB7 ${e.notes}`)),
-            button("\u8BB0\u5F55\u6211\u7684\u590D\u6838", () => edit("finding", f.id))
-          )))
-        ),
-        h(
-          "details",
-          null,
-          h("summary", null, `\u4EA7\u54C1\u673A\u4F1A\uFF08${r.opportunities?.length || 0}\uFF09`),
-          !r.opportunities?.length ? h("p", null, "\u6CA1\u6709\u7ED3\u6784\u5316\u673A\u4F1A\uFF0C\u8BF7\u67E5\u770B\u62A5\u544A\u4E2D\u7684\u9002\u7528\u6027\u548C\u8BC1\u636E\u4E0D\u8DB3\u8BF4\u660E\u3002") : null,
-          ...(r.opportunities || []).map((c) => h(
-            "article",
-            { key: c.id, className: "pi-result" },
-            h("h4", null, c.name),
-            h("p", null, `${c.status === "not-recommended" ? "\u4E0D\u5EFA\u8BAE\u91C7\u7528" : "\u5F85\u9A8C\u8BC1\u65B9\u6848"} \xB7 \u4F9D\u636E\uFF1A${c.evidenceIds.join("\u3001") || "\u7F3A\u5C11\u76F4\u63A5\u8BC1\u636E\uFF0C\u4EC5\u4E3A\u5047\u8BBE"}`),
-            h("p", null, `\u4F18\u5148\u7EA7\uFF1A${{ high: "\u9AD8", medium: "\u4E2D", low: "\u4F4E" }[a.entries.find((e) => e.type === "opportunity" && e.targetId === c.id)?.priority || c.priority]}\uFF08\u53EF\u7531\u4F60\u8C03\u6574\uFF09`),
-            h("details", null, h("summary", null, "\u67E5\u770B\u80FD\u529B\u3001\u9700\u6C42\u4E0E\u9A8C\u8BC1\u8BA1\u5212"), ...Object.entries(opportunityFields).filter(([k]) => k !== "name").map(([k, label]) => h("p", { key: k }, h("strong", null, label + "\uFF1A"), c[k]))),
-            h("div", { className: "pi-actions" }, button("\u8C03\u6574\u4F18\u5148\u7EA7", () => edit("opportunity", c.id)), button("\u4E0B\u8F7D PRD \u8349\u7A3F", () => run("export_report", { ...args, format: "prd", cardId: c.id })), button("\u4E0B\u8F7D PoC \u8349\u7A3F", () => run("export_report", { ...args, format: "poc", cardId: c.id })))
-          ))
-        ),
-        editing ? h(
-          "form",
-          { "aria-label": "\u4FDD\u5B58\u4EBA\u5DE5\u610F\u89C1", onSubmit: (e) => {
-            e.preventDefault();
-            run("annotate", { ...args, ...editing, reportHash: bundle.reportHash, revision: a.revision });
+        { "aria-label": "\u8BC1\u636E\u4E0E\u4EA7\u54C1\u884C\u52A8" },
+        h("h2", null, "\u6838\u67E5\u4F9D\u636E\uFF0C\u518D\u51B3\u5B9A\u884C\u52A8"),
+        h("details", null, h("summary", null, `\u8BC1\u636E\u5BA1\u67E5 \xB7 ${findings.length} \u6761\u7ED3\u8BBA`), ...findings.map((f, i) => h("article", { key: f.id || i, className: "pi-result" }, h("p", null, f.statement), h("p", { className: "pi-small" }, `${kindLabels[f.kind] || "\u672A\u5206\u7C7B"} \xB7 ${reviewLabels[f.review?.status] || "\u672A\u5BA1\u67E5"}`), button("\u67E5\u770B\u539F\u6587\u4E0E\u590D\u6838", () => show(f))))),
+        h("h3", null, `\u4EA7\u54C1\u673A\u4F1A \xB7 ${r.opportunities?.length || 0}`),
+        h("label", null, "\u7B5B\u9009\u673A\u4F1A", h("input", { value: query, onChange: (e) => setQuery(e.target.value), placeholder: "\u641C\u7D22\u7528\u6237\u3001\u95EE\u9898\u6216\u65B9\u6848" })),
+        !r.opportunities?.length ? h("p", null, "\u672C\u62A5\u544A\u6CA1\u6709\u7ED3\u6784\u5316\u4EA7\u54C1\u673A\u4F1A\uFF1B\u4E0D\u636E\u6B64\u751F\u6210\u865A\u6784\u65B9\u6848\u3002") : null,
+        ...(r.opportunities || []).filter((c) => JSON.stringify(c).toLowerCase().includes(query.toLowerCase())).map((c) => h(
+          "article",
+          { key: c.id, className: "pi-card" },
+          c.status === "not-recommended" ? h("p", { className: "pi-note" }, "\u6682\u4E0D\u5EFA\u8BAE\u91C7\u7528 \xB7 " + c.risks) : h("p", { className: "pi-small" }, "\u5F85\u9A8C\u8BC1\u4EA7\u54C1\u5047\u8BBE"),
+          h("h3", null, c.name),
+          h("p", null, `${c.users} \xB7 ${c.painPoint}`),
+          h("p", null, c.value),
+          h("p", null, `\u6211\u7684\u4F18\u5148\u7EA7\uFF1A${{ high: "\u9AD8", medium: "\u4E2D", low: "\u4F4E" }[a.entries.find((e) => e.type === "opportunity" && e.targetId === c.id)?.priority] || "\u672A\u8BBE\u7F6E"} \xB7 \u6A21\u578B\u5EFA\u8BAE\uFF1A${{ high: "\u9AD8", medium: "\u4E2D", low: "\u4F4E" }[c.priority]}`),
+          h("details", null, h("summary", null, "\u5C55\u5F00\u65B9\u6848\u4E0E\u9A8C\u8BC1\u8BA1\u5212"), h("div", { className: "pi-opportunity-map" }, ...["mechanism", "technicalCapability", "productCapability", "feature"].map((k) => h("div", { key: k }, h("strong", null, fields[k]), h("p", null, c[k])))), ...["scenario", "hypothesis", "feasibility", "cost", "risks", "dependencies", "journey", "steps", "metrics", "acceptance", "stopConditions"].map((k) => h("p", { key: k }, h("strong", null, fields[k] + "\uFF1A"), c[k]))),
+          h("div", { className: "pi-actions" }, button("\u67E5\u770B\u8BBA\u6587\u4F9D\u636E", () => {
+            setEditing(null);
+            setEvidence({ statement: c.name, kind: "proposal", evidenceIds: c.evidenceIds });
+          }), button("\u8C03\u6574\u4F18\u5148\u7EA7", () => {
+            setEvidence(null);
+            edit("opportunity", c.id);
+          }), button("\u4E0B\u8F7D PRD \u8349\u7A3F", () => run("export_report", { ...args, format: "prd", cardId: c.id })), button("\u4E0B\u8F7D PoC \u8349\u7A3F", () => run("export_report", { ...args, format: "poc", cardId: c.id })))
+        )),
+        r.opportunities?.length ? h("div", { className: "pi-actions" }, button("\u5BFC\u51FA\u5168\u90E8 PRD \u8349\u7A3F", () => run("export_report", { ...args, format: "prd" })), button("\u5BFC\u51FA\u5168\u90E8 PoC \u8349\u7A3F", () => run("export_report", { ...args, format: "poc" }))) : null,
+        evidence || editing ? h(
+          Drawer,
+          { title: evidence ? "\u8BC1\u636E\u8BE6\u60C5\u4E0E\u590D\u6838" : "\u8C03\u6574\u4EA7\u54C1\u673A\u4F1A", onClose: () => {
+            setEvidence(null);
+            setEditing(null);
           } },
-          h("label", null, editing.type === "finding" ? "\u590D\u6838\u72B6\u6001" : "\u6211\u7684\u4F18\u5148\u7EA7", h(
-            "select",
-            { value: editing.status || editing.priority, onChange: (e) => setEditing({ ...editing, [editing.type === "finding" ? "status" : "priority"]: e.target.value }) },
-            ...Object.entries(editing.type === "finding" ? { pending: "\u5F85\u6838\u67E5", confirmed: "\u5DF2\u786E\u8BA4", questioned: "\u6709\u7591\u95EE" } : { high: "\u9AD8", medium: "\u4E2D", low: "\u4F4E" }).map(([v, l]) => h("option", { key: v, value: v }, l))
-          )),
-          h("label", null, "\u6211\u7684\u5907\u6CE8", h("textarea", { value: editing.notes, maxLength: 5e3, onChange: (e) => setEditing({ ...editing, notes: e.target.value }) })),
-          h("button", { type: "submit", disabled: busy }, "\u4FDD\u5B58\u610F\u89C1"),
-          button("\u53D6\u6D88", () => setEditing(null))
+          evidence ? h(
+            React.Fragment,
+            null,
+            h("p", null, evidence.statement),
+            h("p", null, `\u539F\u59CB\u5206\u7C7B\uFF1A${kindLabels[evidence.kind] || "\u672A\u5206\u7C7B"}`),
+            h("p", null, `${reviewLabels[evidence.review?.status] || "\u672A\u7ECF\u81EA\u52A8\u5BA1\u67E5"}\uFF1A${evidence.review?.reason || "\u6B64\u5185\u5BB9\u4ECD\u9700\u72EC\u7ACB\u6838\u9A8C\u3002"}`),
+            ...Object.entries(evidence.review?.dimensions || {}).map(([k, v]) => h("p", { key: k }, `${{ object: "\u7814\u7A76\u5BF9\u8C61", dataset: "\u6570\u636E\u96C6", baseline: "\u5BF9\u7167\u7EC4", metric: "\u6307\u6807", conditions: "\u9002\u7528\u6761\u4EF6" }[k]}\uFF1A${{ supported: "\u6709\u4F9D\u636E", mismatch: "\u4E0D\u5339\u914D", unknown: "\u672A\u77E5" }[v] || v}`)),
+            evidenceFor(r, evidence.evidenceIds || []).length ? evidenceFor(r, evidence.evidenceIds || []).map((e) => h("section", { key: e.id }, h("h3", null, e.id + " \xB7 " + e.locator), h("blockquote", null, e.text), safeSource(e.url) ? h("a", { href: safeSource(e.url), target: "_blank", rel: "noreferrer" }, "\u67E5\u770B\u6765\u6E90") : h("p", null, "\u672C\u5730\u8D44\u6599\u6216\u6765\u6E90\u94FE\u63A5\u672A\u8BB0\u5F55\u3002"))) : h("p", null, "\u6CA1\u6709\u53EF\u76F4\u63A5\u5B9A\u4F4D\u7684\u539F\u6587\u4F9D\u636E\uFF0C\u4E0D\u80FD\u89C6\u4F5C\u5DF2\u9A8C\u8BC1\u6536\u76CA\u3002")
+          ) : null,
+          form
         ) : null
       );
     };
@@ -487,8 +561,8 @@
     return message;
   }
   function createHistoryView(React) {
-    const h = React.createElement;
-    return function HistoryView({ runs, selected, setSelected, detail, setDetail, run, busy, modules, onRepair }) {
+    const h = React.createElement, Drawer = createDrawer(React);
+    return function HistoryView({ runs, selected, setSelected, detail, setDetail, run, busy, modules, onRepair, onBudget }) {
       const [editing, setEditing] = React.useState(null);
       const [removing, setRemoving] = React.useState(null);
       React.useEffect(() => {
@@ -505,7 +579,7 @@
           { key: r.key + "/" + r.runId, className: "pi-result" },
           h("label", null, h("input", {
             type: "checkbox",
-            disabled: busy || !!r.record?.deletedAt || r.status !== "completed" || !!r.type,
+            disabled: busy || !selected.some((s) => s.runId === r.runId && s.key === r.key) && selected.length >= 5 || !!r.record?.deletedAt || r.status !== "completed" || !!r.type,
             checked: selected.some((s) => s.runId === r.runId && s.key === r.key),
             onChange: (e) => setSelected(e.target.checked ? [...selected, args(r)] : selected.filter((s) => s.runId !== r.runId || s.key !== r.key))
           }), r.displayTitle || r.paper?.title || "\u672A\u8BC6\u522B\u7684\u8BBA\u6587"),
@@ -524,11 +598,16 @@
               React.Fragment,
               null,
               r.status === "completed" && r.type !== "discovery" ? action("\u67E5\u770B\u62A5\u544A", () => run("report", args(r))) : null,
-              r.canResume ? action(r.status === "budget-paused" ? "\u6309\u5F53\u524D\u9884\u7B97\u7EE7\u7EED" : r.hasDocument ? "\u7EE7\u7EED\u5B8C\u6210\u5206\u6790" : "\u91CD\u65B0\u5C1D\u8BD5\u5206\u6790", () => run("resume", args(r))) : null,
-              r.canReanalyze ? action("\u91CD\u65B0\u5206\u6790\u9009\u4E2D\u5185\u5BB9", () => run("analyze", { ...args(r), modules })) : null,
-              !r.type && !r.hasDocument && r.status !== "running" ? action("\u4FEE\u6539\u8BBA\u6587\u4FE1\u606F", () => onRepair(r.input || {})) : null,
-              action("\u7F16\u8F91\u8BB0\u5F55", () => setEditing({ ...args(r), title: r.displayTitle || "", notes: r.record?.notes || "", revision: r.record?.revision || 0 })),
-              action("\u5220\u9664\u8BB0\u5F55", () => setRemoving(r.runId))
+              r.canResume ? action(r.status === "budget-paused" ? "\u8C03\u6574\u9884\u7B97\u5E76\u7EE7\u7EED" : r.hasDocument ? "\u7EE7\u7EED\u5B8C\u6210\u5206\u6790" : "\u91CD\u65B0\u5C1D\u8BD5\u5206\u6790", () => r.status === "budget-paused" ? onBudget(r) : run("resume", args(r))) : null,
+              h(
+                "details",
+                null,
+                h("summary", null, "\u66F4\u591A\u64CD\u4F5C"),
+                r.canReanalyze ? action("\u91CD\u65B0\u5206\u6790\u9009\u4E2D\u5185\u5BB9", () => run("analyze", { ...args(r), modules })) : null,
+                !r.type && !r.hasDocument && r.status !== "running" ? action("\u4FEE\u6539\u8BBA\u6587\u4FE1\u606F", () => onRepair(r.input || {})) : null,
+                action("\u7F16\u8F91\u8BB0\u5F55", () => setEditing({ ...args(r), title: r.displayTitle || "", notes: r.record?.notes || "", revision: r.record?.revision || 0 })),
+                action("\u5220\u9664\u8BB0\u5F55", () => setRemoving(r.runId))
+              )
             )
           ),
           removing === r.runId ? h(
@@ -550,8 +629,8 @@
           ) : null
         )),
         detail ? h(
-          "section",
-          { className: "pi-note", "aria-label": "\u7814\u7A76\u8BB0\u5F55\u8BE6\u60C5" },
+          Drawer,
+          { title: "\u7814\u7A76\u8BB0\u5F55\u8BE6\u60C5", onClose: () => setDetail(null) },
           h("h3", null, detail.displayTitle),
           h("p", null, "\u8BBA\u6587\u539F\u540D\uFF1A" + (detail.paper?.title || "\u672A\u8BC6\u522B")),
           h("p", null, "\u72B6\u6001\uFF1A" + (detail.record?.deletedAt ? "\u5DF2\u5220\u9664" : detail.interrupted ? "\u4E0A\u6B21\u5206\u6790\u4E2D\u65AD" : statusLabels[detail.status] || detail.status)),
@@ -606,7 +685,7 @@
       }
       function Workbench() {
         const reportAnchor = useRef(null);
-        const [sessions, setSessions] = useState([]), [session, setSession] = useState(""), [query, setQuery] = useState(""), [reference, setReference] = useState(""), [local, setLocal] = useState(false), [modules, setModules] = useState(Object.keys(labels)), [papers, setPapers] = useState([]), [runs, setRuns] = useState([]), [selected, setSelected] = useState([]), [historyQuery, setHistoryQuery] = useState(""), [historyStatus, setHistoryStatus] = useState(""), [deleted, setDeleted] = useState(false), [offset, setOffset] = useState(0), [total, setTotal] = useState(0), [detail, setDetail] = useState(null), [submitting, setSubmitting] = useState(false), [report, setReport] = useState(""), [bundle, setBundle] = useState(null), [mode, setMode] = useState(""), [maxCalls, setMaxCalls] = useState("64"), [maxTotalTokens, setMaxTotalTokens] = useState(""), [status, setStatus] = useState("\u9009\u62E9\u4F1A\u8BDD\u4EE5\u4F7F\u7528\u5BF9\u5E94\u5DE5\u4F5C\u533A\u4E0E\u6A21\u578B\u3002"), [error, setError] = useState(""), [job, setJob] = useState(null), [topics, setTopics] = useState(""), [advanced, setAdvanced] = useState({
+        const [sessions, setSessions] = useState([]), [session, setSession] = useState(""), [query, setQuery] = useState(""), [reference, setReference] = useState(""), [local, setLocal] = useState(false), [modules, setModules] = useState([...modes.quick]), [papers, setPapers] = useState([]), [runs, setRuns] = useState([]), [selected, setSelected] = useState([]), [historyQuery, setHistoryQuery] = useState(""), [historyStatus, setHistoryStatus] = useState(""), [deleted, setDeleted] = useState(false), [offset, setOffset] = useState(0), [total, setTotal] = useState(0), [detail, setDetail] = useState(null), [submitting, setSubmitting] = useState(false), [report, setReport] = useState(""), [bundle, setBundle] = useState(null), [mode, setMode] = useState("quick"), [maxCalls, setMaxCalls] = useState("64"), [maxTotalTokens, setMaxTotalTokens] = useState(""), [status, setStatus] = useState("\u9009\u62E9\u4F1A\u8BDD\u4EE5\u4F7F\u7528\u5BF9\u5E94\u5DE5\u4F5C\u533A\u4E0E\u6A21\u578B\u3002"), [error, setError] = useState(""), [job, setJob] = useState(null), [topics, setTopics] = useState(""), [advanced, setAdvanced] = useState({
           author: "",
           venue: "",
           institution: "",
@@ -614,11 +693,20 @@
           until: "",
           sort: "relevance"
         });
+        const [elapsed, setElapsed] = useState(0), [view, setView] = useState("discover"), [origin, setOrigin] = useState("quick"), [sources, setSources] = useState(["arxiv", "openalex"]), [minCitations, setMinCitations] = useState(""), [progress, setProgress] = useState(null), [cancelling, setCancelling] = useState(false), [localRef, setLocalRef] = useState(""), [remoteRef, setRemoteRef] = useState(""), [resumeTarget, setResumeTarget] = useState(null);
+        useEffect(() => {
+          if (!job?.startedAt) return;
+          const update = () => setElapsed(Math.floor((Date.now() - job.startedAt) / 1e3));
+          update();
+          const timer = setInterval(update, 1e3);
+          return () => clearInterval(timer);
+        }, [job?.id]);
         const submitLock = useRef(false);
         const referenceInput = useRef(null);
         const busy = !!job || submitting;
         const historyArgs = (page = offset) => ({ query: historyQuery, deleted, ...historyStatus ? { status: historyStatus } : {}, offset: page, limit: 20 });
         const repair = (input2 = {}) => {
+          setView("create");
           setLocal(Boolean(input2.file));
           setReference(input2.file || input2.reference || "");
           setReport("");
@@ -638,6 +726,18 @@
           refresh();
         }, []);
         useEffect(() => {
+          setProgress(null);
+          setError("");
+          setTopics("");
+          setHistoryQuery("");
+          setHistoryStatus("");
+          setDeleted(false);
+          setDetail(null);
+          setReference("");
+          setLocalRef("");
+          setRemoteRef("");
+          setResumeTarget(null);
+          setQuery("");
           setRuns([]);
           setSelected([]);
           setReport("");
@@ -645,7 +745,7 @@
           setDetail(null);
           setPapers([]);
           setOffset(0);
-          if (session) run("library", historyArgs(0));
+          if (session) run("library", { offset: 0, limit: 20, deleted: false });
         }, [session]);
         useEffect(() => {
           if (!job) return;
@@ -655,8 +755,10 @@
             try {
               const value = await api("/jobs?id=" + encodeURIComponent(job.id));
               if (stopped) return;
-              setStatus(
-                value.status === "running" ? `\u6B63\u5728\u5904\u7406\uFF1A${stageLabels[value.progress?.stage] || "\u5206\u6790\u4E2D"} ${value.progress?.completed || ""}${value.progress?.total ? "/" + value.progress.total : ""}${value.progress?.usage ? ` \xB7 \u5DF2\u8C03\u7528 ${value.progress.usage.calls}/${value.progress.budget.maxCalls} \u6B21 \xB7 \u5DF2\u77E5 ${value.progress.usage.knownTokens} Token\uFF0C${value.progress.usage.unknownUsageCalls} \u6B21\u7528\u91CF\u672A\u77E5` : ""}` : value.status === "completed" ? "\u5DF2\u5B8C\u6210\uFF0C\u7ED3\u679C\u5DF2\u8FD4\u56DE\u3002" : statusLabels[value.status] || "\u4EFB\u52A1\u672A\u5B8C\u6210"
+              setProgress(value.progress || null);
+              if (value.status !== "running") setCancelling(false);
+              if (!job.background) setStatus(
+                value.status === "running" ? `\u6B63\u5728\u5904\u7406\uFF1A${stageLabels[value.progress?.stage] || "\u5206\u6790\u4E2D"} ${progressCount(value.progress)}${value.progress?.usage ? ` \xB7 \u5DF2\u8C03\u7528 ${value.progress.usage.calls}/${value.progress.budget?.maxCalls ?? "\u672A\u8BBE\u7F6E"} \u6B21 \xB7 \u5DF2\u77E5 ${value.progress.usage.knownTokens} Token\uFF0C${value.progress.usage.unknownUsageCalls} \u6B21\u7528\u91CF\u672A\u77E5` : ""}` : value.status === "completed" ? "\u5DF2\u5B8C\u6210\uFF0C\u7ED3\u679C\u5DF2\u8FD4\u56DE\u3002" : statusLabels[value.status] || "\u4EFB\u52A1\u672A\u5B8C\u6210"
               );
               if (value.status === "running") {
                 timer = setTimeout(poll, 1200);
@@ -664,9 +766,10 @@
               }
               const queueHistory = async () => {
                 const next = await api("/run", { sessionId: job.sessionId, tool: "paper_insight_library", args: historyArgs() });
-                if (!stopped) setJob({ id: next.id, action: "library", sessionId: job.sessionId });
+                if (!stopped) setJob({ id: next.id, action: "library", sessionId: job.sessionId, background: true });
               };
               if (value.error) {
+                setStatus("\u7814\u7A76\u672A\u5B8C\u6210\uFF0C\u5DF2\u4FDD\u7559\u53EF\u6062\u590D\u7684\u5185\u5BB9\u3002");
                 setError(explainFailure(value.error.message));
                 if (value.error.candidates) setPapers(value.error.candidates);
                 if (value.error.key) await queueHistory();
@@ -746,9 +849,6 @@
             clearTimeout(timer);
           };
         }, [job]);
-        useEffect(() => {
-          if (report) reportAnchor.current?.scrollIntoView({ block: "start" });
-        }, [report]);
         const run = async (action, args = {}) => {
           if (submitLock.current) return;
           setError("");
@@ -773,13 +873,15 @@
           try {
             submitLock.current = true;
             setSubmitting(true);
+            setCancelling(false);
+            setProgress(null);
             setStatus("\u63D0\u4EA4\u4E2D\u2026");
             const value = await api("/run", {
               sessionId: session,
               tool: "paper_insight_" + action,
               args
             });
-            setJob({ id: value.id, action, sessionId: session });
+            setJob({ id: value.id, action, sessionId: session, startedAt: Date.now() });
           } catch (e) {
             setError(e.message);
             submitLock.current = false;
@@ -813,312 +915,183 @@
             modules
           });
         };
+        const issue = precheck({ session, reference, modules, maxCalls, busy });
+        const selectPaper = (p) => {
+          setLocal(false);
+          setReference(p.id || p.url || p.title);
+          setView("create");
+          setError("");
+        };
+        const search = () => {
+          if (!query.trim()) {
+            setError("\u8BF7\u8F93\u5165\u7814\u7A76\u4E3B\u9898\u3002");
+            return;
+          }
+          if (!sources.length) {
+            setError("\u8BF7\u9009\u62E9\u81F3\u5C11\u4E00\u4E2A\u8BBA\u6587\u6765\u6E90\u3002");
+            return;
+          }
+          run("search", { query: query.trim(), sources, ...Object.fromEntries(Object.entries(advanced).filter(([, v]) => v)), ...minCitations !== "" ? { minCitations: Number(minCitations) } : {}, limit: 10 });
+        };
+        const panel = (id, children) => h("div", { id: "pi-panel-" + id, role: "tabpanel", "aria-labelledby": "pi-tab-" + id, hidden: view !== id, className: "pi-panel" }, children);
+        const setCustom = (next) => {
+          setModules(next);
+          if (mode) setOrigin(mode);
+          setMode("");
+        };
         return h(
           "section",
           { className: "pi-workbench", "aria-label": "\u8BBA\u6587\u7814\u7A76\u5DE5\u4F5C\u53F0" },
           h("h1", null, "\u8BBA\u6587 \u2192 \u4EA7\u54C1"),
-          h("p", null, "\u53D1\u73B0\u7814\u7A76\uFF0C\u7406\u89E3\u673A\u5236\uFF0C\u628A\u6280\u672F\u8F6C\u5316\u4E3A\u53EF\u9A8C\u8BC1\u7684\u4EA7\u54C1\u65B9\u6848\u3002"),
+          h("p", null, "\u4ECE\u7406\u89E3\u4E00\u7BC7\u8BBA\u6587\uFF0C\u5230\u9A8C\u8BC1\u4E00\u4E2A\u4EA7\u54C1\u673A\u4F1A\u3002"),
+          h("label", null, "\u7814\u7A76\u4F1A\u8BDD\u4E0E\u5DE5\u4F5C\u533A", h("select", { "aria-label": "\u7814\u7A76\u4F1A\u8BDD", value: session, disabled: busy, onChange: (e) => setSession(e.target.value) }, h("option", { value: "" }, "\u8BF7\u9009\u62E9\u4F1A\u8BDD"), ...sessions.map((s) => h("option", { key: s.id, value: s.id }, (s.workspace || s.title) + " \xB7 " + s.id.slice(-8))))),
+          h("div", { className: "pi-actions" }, button("\u5237\u65B0\u4F1A\u8BDD", refresh), busy ? h("span", null, "\u4EFB\u52A1\u6267\u884C\u671F\u95F4\u4E0D\u80FD\u5207\u6362\u5DE5\u4F5C\u533A\uFF1B\u53EF\u4EE5\u81EA\u7531\u5207\u6362\u4E0B\u65B9\u89C6\u56FE\u3002") : null),
+          h("nav", { className: "pi-tabs", role: "tablist", "aria-label": "\u7814\u7A76\u5DE5\u4F5C\u533A" }, ...Object.entries(views).map(([id, label]) => h("button", { key: id, id: "pi-tab-" + id, role: "tab", "aria-selected": view === id, "aria-controls": "pi-panel-" + id, tabIndex: view === id ? 0 : -1, onClick: () => setView(id), onKeyDown: (e) => {
+            const ids = Object.keys(views), i = ids.indexOf(id);
+            let next;
+            if (e.key === "ArrowRight") next = ids[(i + 1) % 4];
+            if (e.key === "ArrowLeft") next = ids[(i + 3) % 4];
+            if (e.key === "Home") next = ids[0];
+            if (e.key === "End") next = ids[3];
+            if (next) {
+              e.preventDefault();
+              setView(next);
+              document.getElementById("pi-tab-" + next)?.focus();
+            }
+          } }, label))),
           h(
-            "label",
-            null,
-            "\u7814\u7A76\u4F1A\u8BDD",
+            "section",
+            { className: "pi-status", "aria-label": "\u4EFB\u52A1\u72B6\u6001" },
+            h("div", { role: "status" }, status),
+            job?.startedAt ? h("p", { className: "pi-small" }, `\u672C\u6B21\u64CD\u4F5C\u5DF2\u7B49\u5F85 ${elapsed} \u79D2`) : null,
+            progress?.usage ? h("p", null, `\u6A21\u578B\u8C03\u7528 ${progress.usage.calls} \u6B21 \xB7 \u5DF2\u77E5 ${progress.usage.knownTokens} Token \xB7 ${progress.usage.unknownUsageCalls} \u6B21\u7528\u91CF\u672A\u77E5 \xB7 \u8D39\u7528\u672A\u77E5`) : null,
             h(
-              "select",
-              {
-                "aria-label": "\u7814\u7A76\u4F1A\u8BDD",
-                value: session,
-                disabled: busy,
-                onChange: (e) => setSession(e.target.value)
-              },
-              h("option", { value: "" }, "\u8BF7\u9009\u62E9\u4F1A\u8BDD"),
-              ...sessions.map(
-                (s) => h(
-                  "option",
-                  { key: s.id, value: s.id },
-                  (s.workspace || s.title) + " \xB7 " + s.id.slice(-8)
-                )
-              )
+              "div",
+              { className: "pi-actions" },
+              job ? h("button", { disabled: cancelling, onClick: async () => {
+                setCancelling(true);
+                try {
+                  await api("/cancel", { id: job.id });
+                  setStatus("\u6B63\u5728\u53D6\u6D88\uFF0C\u7B49\u5F85\u5F53\u524D\u64CD\u4F5C\u7ED3\u675F\uFF1B\u540E\u7EED\u9636\u6BB5\u5C06\u505C\u6B62\u3002");
+                } catch (e) {
+                  setError(e.message);
+                  setCancelling(false);
+                }
+              } }, cancelling ? "\u6B63\u5728\u53D6\u6D88\u2026" : "\u53D6\u6D88\u4EFB\u52A1") : null,
+              report ? h("button", { onClick: () => setView("report") }, "\u67E5\u770B\u62A5\u544A") : null
             )
           ),
-          button("\u5237\u65B0\u4F1A\u8BDD", refresh),
-          h(
-            "div",
-            { className: "pi-actions" },
-            h("div", { className: "pi-note", role: "status" }, status),
-            job ? h(
-              "button",
-              {
-                onClick: () => api("/cancel", { id: job.id }).catch(
-                  (e) => setError(e.message)
-                )
-              },
-              "\u53D6\u6D88\u4EFB\u52A1"
-            ) : null
-          ),
           error ? h("p", { role: "alert", className: "pi-error" }, error) : null,
-          h(
+          panel("discover", h(
             "div",
-            { className: "pi-grid" },
+            { className: "pi-columns" },
             h(
               "div",
               null,
               h(
-                "section",
-                { className: "pi-card" },
-                h("h2", null, "\u53D1\u73B0\u8BBA\u6587"),
+                "form",
+                { className: "pi-card", onSubmit: (e) => {
+                  e.preventDefault();
+                  search();
+                } },
+                h("h2", null, "\u5BFB\u627E\u503C\u5F97\u7814\u7A76\u7684\u8BBA\u6587"),
                 input("\u4E3B\u9898\u5173\u952E\u8BCD", query, setQuery),
-                h(
-                  "details",
-                  null,
-                  h("summary", null, "\u7B5B\u9009\u6761\u4EF6"),
-                  ...["author", "institution", "venue", "since", "until"].map(
-                    (k) => input(
-                      {
-                        author: "\u4F5C\u8005",
-                        institution: "\u673A\u6784",
-                        venue: "\u4F1A\u8BAE / \u671F\u520A",
-                        since: "\u8D77\u59CB\u65E5\u671F",
-                        until: "\u7ED3\u675F\u65E5\u671F"
-                      }[k],
-                      advanced[k],
-                      (v) => setAdvanced({ ...advanced, [k]: v }),
-                      ["since", "until"].includes(k) ? "date" : "text"
-                    )
-                  ),
-                  h(
-                    "label",
-                    null,
-                    "\u6392\u5E8F",
-                    h(
-                      "select",
-                      {
-                        value: advanced.sort,
-                        onChange: (e) => setAdvanced({ ...advanced, sort: e.target.value })
-                      },
-                      ...Object.entries({
-                        relevance: "\u76F8\u5173\u6027",
-                        date: "\u53D1\u8868\u65F6\u95F4",
-                        citations: "\u5F15\u7528\u91CF"
-                      }).map(([k, v]) => h("option", { key: k, value: k }, v))
-                    )
-                  )
-                ),
-                h(
-                  "div",
-                  { className: "pi-actions" },
-                  button(
-                    "\u68C0\u7D22\u8BBA\u6587",
-                    () => run("search", {
-                      query,
-                      ...Object.fromEntries(
-                        Object.entries(advanced).filter(([, v]) => v)
-                      ),
-                      limit: 10
-                    }),
-                    true
-                  )
-                )
+                h("fieldset", null, h("legend", null, "\u8BBA\u6587\u6765\u6E90"), ...["arxiv", "openreview", "semantic-scholar", "openalex", "crossref"].map((s) => h("label", { key: s }, h("input", { type: "checkbox", checked: sources.includes(s), onChange: (e) => setSources(e.target.checked ? [...sources, s] : sources.filter((x) => x !== s)) }), s))),
+                h("details", null, h("summary", null, "\u66F4\u591A\u7B5B\u9009"), ...["author", "institution", "venue", "since", "until"].map((k) => input({ author: "\u4F5C\u8005", institution: "\u673A\u6784", venue: "\u4F1A\u8BAE / \u671F\u520A", since: "\u8D77\u59CB\u65E5\u671F", until: "\u7ED3\u675F\u65E5\u671F" }[k], advanced[k], (v) => setAdvanced({ ...advanced, [k]: v }), ["since", "until"].includes(k) ? "date" : "text")), input("\u6700\u4F4E\u5F15\u7528\u91CF", minCitations, setMinCitations, "number")),
+                h("label", null, "\u6392\u5E8F", h("select", { value: advanced.sort, onChange: (e) => setAdvanced({ ...advanced, sort: e.target.value }) }, ...Object.entries({ relevance: "\u76F8\u5173\u6027", date: "\u53D1\u8868\u65F6\u95F4", citations: "\u5F15\u7528\u91CF" }).map(([k, v]) => h("option", { key: k, value: k }, v)))),
+                h("div", { className: "pi-actions" }, h("button", { type: "submit", className: "pi-primary", disabled: busy || !query.trim() || !sources.length }, "\u68C0\u7D22\u8BBA\u6587"), button("\u91CD\u7F6E\u7B5B\u9009", () => {
+                  setAdvanced({ author: "", institution: "", venue: "", since: "", until: "", sort: "relevance" });
+                  setMinCitations("");
+                  setSources(["arxiv", "openalex"]);
+                }))
               ),
-              h(
-                "section",
-                { className: "pi-card" },
-                h("h2", null, "\u5206\u6790\u8BBA\u6587"),
-                h("label", null, "\u7814\u7A76\u6A21\u5F0F", h("select", { value: mode, onChange: (e) => {
-                  const v = e.target.value;
-                  setMode(v);
-                  if (v) setModules({ quick: ["paper", "beginner"], deep: ["paper", "first-principles", "landscape", "decision"], product: ["paper", "sandbox", "features", "products", "experience", "decision"] }[v]);
-                } }, h("option", { value: "" }, "\u81EA\u9009\u5185\u5BB9"), h("option", { value: "quick" }, "\u5FEB\u901F\u9605\u8BFB"), h("option", { value: "deep" }, "\u6DF1\u5EA6\u7814\u7A76"), h("option", { value: "product" }, "\u4EA7\u54C1\u7814\u7A76"))),
-                input("\u6700\u591A\u6A21\u578B\u8C03\u7528\u6B21\u6570\uFF08\u7EE7\u7EED\u7814\u7A76\u65F6\u542B\u6B64\u524D\u8C03\u7528\uFF09", maxCalls, setMaxCalls, "number"),
-                h("details", null, h("summary", null, "Token \u9884\u7B97\u4E0E\u7528\u91CF\u8BF4\u660E"), input("\u603B Token \u786C\u9650\u5236\uFF08\u53EF\u7559\u7A7A\uFF09", maxTotalTokens, setMaxTotalTokens, "number"), h("p", null, "\u4E0D\u652F\u6301\u53EF\u4FE1\u8BA1\u6570\u7684\u6A21\u578B\u4F1A\u5728\u8C03\u7528\u524D\u6682\u505C\uFF1B\u53EF\u7559\u7A7A\u5E76\u4F7F\u7528\u8C03\u7528\u6B21\u6570\u9650\u5236\u3002\u5B9E\u9645\u7528\u91CF\u6216\u8D39\u7528\u672A\u77E5\u65F6\u4F1A\u660E\u786E\u6807\u6CE8\u3002")),
-                h(
-                  "label",
-                  null,
-                  h("input", {
-                    type: "checkbox",
-                    checked: local,
-                    onChange: (e) => setLocal(e.target.checked)
-                  }),
-                  "\u4F7F\u7528\u5DE5\u4F5C\u533A\u5185\u672C\u5730\u6587\u4EF6"
-                ),
-                input(
-                  local ? "PDF / \u6587\u672C\u76F8\u5BF9\u8DEF\u5F84" : "\u8BBA\u6587\u6807\u9898 / \u94FE\u63A5 / DOI / arXiv \u7F16\u53F7",
-                  reference,
-                  setReference
-                ),
-                h(
-                  "p",
-                  { className: "pi-small" },
-                  "\u52FE\u9009\u672C\u6B21\u60F3\u4E86\u89E3\u7684\u5185\u5BB9\u3002\u5B8C\u6574\u5206\u6790\u53EF\u80FD\u8017\u65F6\u6570\u5206\u949F\uFF0C\u5E76\u4F7F\u7528\u5F53\u524D\u4F1A\u8BDD\u6A21\u578B\u989D\u5EA6\u3002"
-                ),
-                h(
-                  "div",
-                  { className: "pi-checks" },
-                  ...Object.entries(labels).map(
-                    ([id, label]) => h(
-                      "label",
-                      { key: id },
-                      h("input", {
-                        type: "checkbox",
-                        checked: modules.includes(id),
-                        onChange: (e) => setModules(
-                          e.target.checked ? [...modules, id] : modules.filter((m) => m !== id)
-                        )
-                      }),
-                      label
-                    )
-                  )
-                ),
-                h(
-                  "div",
-                  { className: "pi-actions" },
-                  button("\u5F00\u59CB\u5206\u6790", () => analyze(reference), true)
-                )
-              ),
-              h(
-                "section",
-                { className: "pi-card" },
-                h("h2", null, "\u6301\u7EED\u7814\u7A76"),
-                h(
-                  "label",
-                  null,
-                  "\u5173\u6CE8\u4E3B\u9898\uFF0C\u6BCF\u884C\u4E00\u4E2A",
-                  h("textarea", {
-                    value: topics,
-                    onChange: (e) => setTopics(e.target.value)
-                  })
-                ),
-                h(
-                  "div",
-                  { className: "pi-actions" },
-                  button("\u8BFB\u53D6\u5173\u6CE8\u4E3B\u9898", () => run("subscriptions")),
-                  button(
-                    "\u4FDD\u5B58\u5173\u6CE8\u4E3B\u9898",
-                    () => run("subscriptions", {
-                      topics: topics.split("\n").map((s) => s.trim()).filter(Boolean)
-                    })
-                  ),
-                  button("\u53D1\u73B0\u65B0\u589E\u8BBA\u6587", () => run("discover_updates")),
-                  button("\u805A\u5408\u4EA7\u54C1\u673A\u4F1A", () => run("aggregate"))
-                ),
-                h(
-                  "p",
-                  { className: "pi-small" },
-                  "\u5B9A\u671F\u66F4\u65B0\u53EF\u8BA9 Harness \u7684\u5B9A\u65F6\u4EFB\u52A1\u8C03\u7528\u589E\u91CF\u53D1\u73B0\u5DE5\u5177\u3002\u6B64\u5904\u4E0D\u4F1A\u81EA\u52A8\u521B\u5EFA\u5B9A\u65F6\u4EFB\u52A1\u3002"
-                )
-              )
-            ),
-            h(
-              "div",
-              null,
-              h(
-                "section",
-                { className: "pi-card" },
-                h("h2", null, "\u68C0\u7D22\u7ED3\u679C"),
-                papers.length ? papers.map(
-                  (p, i) => h(
-                    "article",
-                    { key: p.id || i, className: "pi-result" },
-                    h("strong", null, p.title),
-                    h(
-                      "div",
-                      { className: "pi-small" },
-                      (p.authors || []).slice(0, 3).join("\u3001") + " \xB7 " + (p.published || p.year || "\u65E5\u671F\u672A\u77E5")
-                    ),
-                    h("p", null, p.abstract?.slice(0, 250)),
-                    h(
-                      "div",
-                      { className: "pi-actions" },
-                      button("\u5206\u6790\u8FD9\u7BC7", () => {
-                        setLocal(false);
-                        setReference(p.id);
-                        run("analyze", { reference: p.id, modules });
-                      }),
-                      p.url?.startsWith("https://") ? h(
-                        "a",
-                        {
-                          href: p.url,
-                          target: "_blank",
-                          rel: "noreferrer"
-                        },
-                        "\u8BBA\u6587\u6765\u6E90"
-                      ) : null
-                    )
-                  )
-                ) : h("p", null, "\u8F93\u5165\u4E3B\u9898\u68C0\u7D22\uFF0C\u6216\u76F4\u63A5\u6307\u5B9A\u8BBA\u6587\u5F00\u59CB\u5206\u6790\u3002")
-              ),
-              h(
-                "section",
-                { className: "pi-card" },
-                h("h2", null, "\u7814\u7A76\u5386\u53F2"),
-                h("p", { className: "pi-small" }, "\u7EE7\u7EED\u5B8C\u6210\u5206\u6790\uFF1A\u4FDD\u7559\u5DF2\u5B8C\u6210\u7684\u5185\u5BB9\uFF0C\u63A5\u7740\u5B8C\u6210\u5269\u4F59\u90E8\u5206\u3002\u91CD\u65B0\u5206\u6790\u9009\u4E2D\u5185\u5BB9\uFF1A\u6309\u5DE6\u4FA7\u52FE\u9009\u7684\u5185\u5BB9\u751F\u6210\u65B0\u7248\u672C\uFF0C\u65E7\u62A5\u544A\u4ECD\u4FDD\u7559\u3002"),
-                input("\u641C\u7D22\u8BBA\u6587\u3001\u5907\u6CE8\u6216\u62A5\u544A\u6B63\u6587", historyQuery, setHistoryQuery),
-                h("label", null, "\u5386\u53F2\u72B6\u6001", h(
-                  "select",
-                  { value: historyStatus, onChange: (e) => setHistoryStatus(e.target.value) },
-                  h("option", { value: "" }, "\u5168\u90E8\u72B6\u6001"),
-                  ...Object.entries(statusLabels).map(([value, label]) => h("option", { key: value, value }, label))
-                )),
-                h("label", null, h("input", { type: "checkbox", checked: deleted, onChange: (e) => setDeleted(e.target.checked) }), "\u67E5\u770B\u5DF2\u5220\u9664\u8BB0\u5F55"),
-                h(
-                  "div",
-                  { className: "pi-actions" },
-                  button("\u65B0\u5EFA\u7814\u7A76", () => repair()),
-                  button("\u67E5\u8BE2\u5386\u53F2", () => {
-                    setOffset(0);
-                    setDetail(null);
-                    run("library", historyArgs(0));
-                  }),
-                  button("\u6BD4\u8F83\u6240\u9009\u8BBA\u6587", () => {
-                    if (selected.length < 2) {
-                      setError("\u8BF7\u5148\u9009\u62E9\u81F3\u5C11\u4E24\u7BC7\u5DF2\u5B8C\u6210\u7684\u8BBA\u6587\u3002");
-                      return;
-                    }
-                    run("compare_papers", { reports: selected });
-                  })
-                ),
-                h("p", { className: "pi-small" }, `\u5171 ${total} \u6761\u5339\u914D\u8BB0\u5F55`),
-                !runs.length ? h("p", null, "\u6682\u65E0\u5339\u914D\u8BB0\u5F55\uFF0C\u53EF\u65B0\u5EFA\u7814\u7A76\u6216\u8C03\u6574\u67E5\u8BE2\u6761\u4EF6\u3002") : null,
-                h(HistoryView, { runs, selected, setSelected, detail, setDetail, run, busy, modules, onRepair: repair }),
-                h(
-                  "div",
-                  { className: "pi-actions" },
-                  offset > 0 ? button("\u4E0A\u4E00\u9875", () => {
-                    setOffset(Math.max(0, offset - 20));
-                    run("library", historyArgs(Math.max(0, offset - 20)));
-                  }) : null,
-                  offset + 20 < total ? button("\u4E0B\u4E00\u9875", () => {
-                    setOffset(offset + 20);
-                    run("library", historyArgs(offset + 20));
-                  }) : null
-                )
-              )
+              h("details", { className: "pi-card" }, h("summary", null, "\u6301\u7EED\u5173\u6CE8\u7814\u7A76\u4E3B\u9898"), h("label", null, "\u6BCF\u884C\u4E00\u4E2A\u4E3B\u9898", h("textarea", { value: topics, onChange: (e) => setTopics(e.target.value) })), h("div", { className: "pi-actions" }, button("\u8BFB\u53D6\u5173\u6CE8\u4E3B\u9898", () => run("subscriptions")), button("\u4FDD\u5B58\u5173\u6CE8\u4E3B\u9898", () => run("subscriptions", { topics: topics.split("\n").map((s) => s.trim()).filter(Boolean) })), button("\u53D1\u73B0\u65B0\u589E\u8BBA\u6587", () => run("discover_updates"))), h("p", null, "\u5B9A\u671F\u53D1\u73B0\u7531 Harness \u6216\u5916\u90E8\u8C03\u5EA6\u5668\u89E6\u53D1\u3002"))
             ),
             h(
               "section",
-              { className: "pi-card pi-report-card", ref: reportAnchor },
-              h("h2", null, "\u7814\u7A76\u62A5\u544A"),
-              report ? h(ResearchControls, { bundle, run, busy }) : null,
-              report ? h(ReportView, {
-                text: report,
-                onDownload: () => {
-                  const url = URL.createObjectURL(
-                    new Blob([report], {
-                      type: "text/markdown;charset=utf-8"
-                    })
-                  );
-                  const a = document.createElement("a");
-                  a.href = url;
-                  a.download = "paper-research.md";
-                  a.click();
-                  setTimeout(() => URL.revokeObjectURL(url), 1e3);
-                }
-              }) : h(
-                "p",
-                null,
-                "\u5B8C\u6210\u5206\u6790\u6216\u9009\u62E9\u5386\u53F2\u62A5\u544A\u540E\uFF0C\u5185\u5BB9\u5C06\u663E\u793A\u5728\u8FD9\u91CC\u3002"
-              )
+              { className: "pi-card" },
+              h("h2", null, `\u68C0\u7D22\u7ED3\u679C \xB7 ${papers.length} \u7BC7`),
+              busy && job?.action === "search" ? h("p", null, "\u6B63\u5728\u67E5\u8BE2\uFF0C\u4EE5\u4E0B\u4FDD\u7559\u4E0A\u6B21\u7ED3\u679C\u2026") : null,
+              !papers.length ? h("p", null, "\u8F93\u5165\u4E3B\u9898\uFF0C\u6216\u5728\u201C\u521B\u5EFA\u7814\u7A76\u201D\u4E2D\u76F4\u63A5\u6307\u5B9A\u8BBA\u6587\u3002") : null,
+              ...papers.map((p, i) => h("article", { key: p.id || i, className: "pi-result" }, h("h3", null, p.title), h("p", { className: "pi-small" }, (p.authors || []).slice(0, 4).join("\u3001") + " \xB7 " + (p.published || p.year || "\u65E5\u671F\u672A\u77E5") + " \xB7 " + (p.sources?.join("\u3001") || p.source || "\u6765\u6E90\u672A\u77E5") + " \xB7 \u5F15\u7528 " + (p.citations ?? p.citationCount ?? "\u672A\u77E5")), p.abstract ? h("details", null, h("summary", null, "\u9605\u8BFB\u6458\u8981"), h("p", null, p.abstract)) : h("p", null, "\u6682\u65E0\u6458\u8981"), h("div", { className: "pi-actions" }, h("button", { onClick: () => selectPaper(p) }, "\u7814\u7A76\u8FD9\u7BC7"), safeSource(p.url) ? h("a", { href: safeSource(p.url), target: "_blank", rel: "noreferrer" }, "\u67E5\u770B\u6765\u6E90") : null)))
             )
-          )
+          )),
+          panel("create", h(
+            "div",
+            { className: "pi-columns" },
+            h(
+              "section",
+              { className: "pi-card" },
+              h("h2", null, "\u8BBE\u7F6E\u672C\u6B21\u7814\u7A76"),
+              h("label", null, "\u7814\u7A76\u6A21\u5F0F", h("select", { value: mode, onChange: (e) => {
+                setMode(e.target.value);
+                if (e.target.value) {
+                  setOrigin(e.target.value);
+                  setModules([...modes[e.target.value]]);
+                }
+              } }, h("option", { value: "" }, `\u81EA\u5B9A\u4E49${origin ? "\uFF08\u6765\u81EA" + modeLabels[origin] + "\uFF09" : ""}`), ...Object.entries(modeLabels).map(([v, l]) => h("option", { key: v, value: v }, l)))),
+              h("label", null, h("input", { type: "checkbox", checked: local, onChange: (e) => {
+                setReference(local ? remoteRef : localRef);
+                if (local) setLocalRef(reference);
+                else setRemoteRef(reference);
+                setLocal(e.target.checked);
+              } }), "\u4F7F\u7528\u5DE5\u4F5C\u533A\u5185\u672C\u5730\u6587\u4EF6"),
+              input(local ? "PDF / \u6587\u672C\u76F8\u5BF9\u8DEF\u5F84" : "\u8BBA\u6587\u6807\u9898 / \u94FE\u63A5 / DOI / arXiv \u7F16\u53F7", reference, setReference),
+              h("p", { className: "pi-small" }, local ? "\u6587\u4EF6\u5E94\u5DF2\u5728\u6240\u9009\u5DE5\u4F5C\u533A\u5185\uFF0C\u6B64\u5904\u4E0D\u4F1A\u4E0A\u4F20\u6587\u4EF6\u3002" : "\u6807\u9898\u4F1A\u5148\u68C0\u7D22\u5339\u914D\uFF1B\u9047\u5230\u591A\u4E2A\u5019\u9009\u65F6\u9700\u9009\u62E9\u8BBA\u6587\u3002"),
+              h("fieldset", null, h("legend", null, "\u7814\u7A76\u5185\u5BB9"), ...Object.entries({ "\u7406\u89E3\u8BBA\u6587": ["paper", "first-principles", "beginner"], "\u7814\u7A76\u4E0E\u8FC1\u79FB": ["landscape", "transfer", "sandbox"], "\u4EA7\u54C1\u4E0E\u884C\u52A8": ["features", "products", "experience", "decision"] }).map(([group, ids]) => h("div", { key: group }, h("h3", null, group), ...ids.map((id) => h("label", { key: id }, h("input", { type: "checkbox", checked: modules.includes(id), onChange: (e) => setCustom(e.target.checked ? [...modules, id] : modules.filter((m) => m !== id)) }), labels[id])))), h("div", { className: "pi-actions" }, button("\u5168\u9009", () => setCustom(Object.keys(labels))), button("\u6E05\u7A7A", () => setCustom([])))),
+              input("\u6700\u591A\u6A21\u578B\u8C03\u7528\u6B21\u6570", maxCalls, setMaxCalls, "number"),
+              h("p", { className: "pi-small" }, "\u7EE7\u7EED\u6216\u8865\u5145\u7814\u7A76\u65F6\u5305\u542B\u6B64\u524D\u8C03\u7528\u6B21\u6570\u3002\u9884\u7B97\u7528\u5C3D\u540E\u4F1A\u4FDD\u7559\u5DF2\u5B8C\u6210\u5185\u5BB9\u3002"),
+              h("details", null, h("summary", null, "Token \u4E0E\u8D39\u7528\u8BF4\u660E"), h("p", null, "\u5F53\u524D Harness \u8DEF\u7531\u672A\u63D0\u4F9B\u53EF\u9A8C\u8BC1\u7684 Token \u786C\u9650\u5236\uFF0C\u56E0\u6B64\u53EA\u5F00\u653E\u8C03\u7528\u6B21\u6570\u9884\u7B97\u3002\u5B9E\u9645 Token \u7528\u91CF\u6309\u6A21\u578B\u8FD4\u56DE\u8BB0\u5F55\uFF1B\u8D39\u7528\u672A\u77E5\u3002"))
+            ),
+            h("aside", { className: "pi-card pi-preview" }, h("h2", null, "\u5F00\u59CB\u524D\u786E\u8BA4"), h("p", null, reference || "\u5C1A\u672A\u6307\u5B9A\u8BBA\u6587"), h("p", null, `\u672C\u6B21 ${modules.length} \u9879\uFF1A${modules.map((id) => labels[id]).join("\u3001") || "\u5C1A\u672A\u9009\u62E9"}`), h("p", null, `\u6700\u591A ${maxCalls || "\u672A\u8BBE\u7F6E"} \u6B21\u6A21\u578B\u8C03\u7528`), h("p", null, "\u5C06\u4F7F\u7528\u6240\u9009\u4F1A\u8BDD\u7684\u6A21\u578B\u3002\u6587\u4EF6\u6743\u9650\u53CA\u6765\u6E90\u8BBF\u95EE\u80FD\u529B\u4F1A\u5728\u6267\u884C\u65F6\u68C0\u67E5\uFF1B\u62A5\u544A\u4FDD\u5B58\u5728\u8BE5\u5DE5\u4F5C\u533A\u914D\u7F6E\u7684\u6570\u636E\u76EE\u5F55\u3002"), h("p", { role: "status" }, issue || "\u914D\u7F6E\u5DF2\u5C31\u7EEA\uFF0C\u53EF\u4EE5\u5F00\u59CB\u3002"), h("button", { className: "pi-primary", disabled: !!issue, onClick: () => analyze(reference) }, "\u5F00\u59CB\u7814\u7A76"))
+          )),
+          panel("history", h(
+            "section",
+            { className: "pi-card" },
+            h("h2", null, "\u7814\u7A76\u5386\u53F2"),
+            h("p", null, "\u67E5\u770B\u5DF2\u5B8C\u6210\u62A5\u544A\uFF0C\u6216\u63A5\u7740\u5B8C\u6210\u672A\u5B8C\u6210\u7684\u7814\u7A76\u3002\u91CD\u65B0\u5206\u6790\u4F1A\u4FDD\u7559\u65E7\u7248\u672C\u3002"),
+            input("\u641C\u7D22\u8BBA\u6587\u3001\u5907\u6CE8\u6216\u62A5\u544A\u6B63\u6587", historyQuery, setHistoryQuery),
+            h("label", null, "\u7814\u7A76\u72B6\u6001", h("select", { value: historyStatus, onChange: (e) => setHistoryStatus(e.target.value) }, h("option", { value: "" }, "\u5168\u90E8\u72B6\u6001"), ...Object.entries(statusLabels).map(([v, l]) => h("option", { key: v, value: v }, l)))),
+            h("label", null, h("input", { type: "checkbox", checked: deleted, onChange: (e) => setDeleted(e.target.checked) }), "\u67E5\u770B\u5DF2\u5220\u9664\u8BB0\u5F55"),
+            h("div", { className: "pi-actions" }, button("\u65B0\u5EFA\u7814\u7A76", () => repair()), button("\u67E5\u8BE2\u5386\u53F2", () => {
+              setOffset(0);
+              setDetail(null);
+              run("library", historyArgs(0));
+            }), h("button", { disabled: busy || selected.length < 2 || selected.length > 5, onClick: () => run("compare_papers", { reports: selected }) }, `\u6BD4\u8F83\u6240\u9009\u8BBA\u6587\uFF08${selected.length}/5\uFF09`)),
+            h("p", { className: "pi-small" }, `\u5171 ${total} \u6761\u8BB0\u5F55`),
+            h(HistoryView, { runs, selected, setSelected, detail, setDetail, run: async (action, args) => {
+              if (action === "report") setView("report");
+              return run(action, args);
+            }, busy, modules, onRepair: repair, onBudget: (r) => {
+              setResumeTarget(r);
+              setView("create");
+            } }),
+            h("div", { className: "pi-actions" }, offset > 0 ? button("\u4E0A\u4E00\u9875", () => {
+              setOffset(offset - 20);
+              run("library", historyArgs(offset - 20));
+            }) : null, offset + 20 < total ? button("\u4E0B\u4E00\u9875", () => {
+              setOffset(offset + 20);
+              run("library", historyArgs(offset + 20));
+            }) : null)
+          )),
+          resumeTarget && view === "create" ? h("section", { className: "pi-card" }, h("h2", null, "\u8C03\u6574\u9884\u7B97\u5E76\u7EE7\u7EED"), h("p", null, resumeTarget.displayTitle || resumeTarget.paper?.title), h("p", null, "\u4FEE\u6539\u4E0A\u65B9\u8C03\u7528\u6B21\u6570\u603B\u9884\u7B97\u540E\u7EE7\u7EED\uFF1B\u5DF2\u5B8C\u6210\u7684\u5185\u5BB9\u4F1A\u590D\u7528\u3002"), button("\u6309\u65B0\u9884\u7B97\u7EE7\u7EED", () => {
+            run("resume", { key: resumeTarget.key, runId: resumeTarget.runId });
+            setResumeTarget(null);
+          }, true), button("\u53D6\u6D88\u6062\u590D", () => setResumeTarget(null))) : null,
+          panel("report", h("section", { className: "pi-card pi-report-card", ref: reportAnchor }, h("h2", null, "\u7814\u7A76\u62A5\u544A"), report ? h(
+            React.Fragment,
+            null,
+            h(ResearchControls, { bundle, run, busy, part: "overview" }),
+            h(ReportView, { text: report, onDownload: () => {
+              const url = URL.createObjectURL(new Blob([report], { type: "text/markdown;charset=utf-8" }));
+              const a = document.createElement("a");
+              a.href = url;
+              a.download = "paper-research.md";
+              a.click();
+              setTimeout(() => URL.revokeObjectURL(url), 1e3);
+            } }),
+            h(ResearchControls, { bundle, run, busy, part: "actions" })
+          ) : h("p", null, "\u5B8C\u6210\u7814\u7A76\u540E\u70B9\u51FB\u201C\u67E5\u770B\u62A5\u544A\u201D\uFF0C\u6216\u4ECE\u7814\u7A76\u5386\u53F2\u6253\u5F00\u5DF2\u6709\u62A5\u544A\u3002")))
         );
       }
       return {
@@ -1126,7 +1099,7 @@
         apply(ctx) {
           ctx.effect(() => {
             const style = document.createElement("style");
-            style.textContent = css + readingStyle;
+            style.textContent = css + readingStyle + workbenchStyle;
             document.head.appendChild(style);
             return () => style.remove();
           });

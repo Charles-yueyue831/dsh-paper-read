@@ -56,7 +56,7 @@ try {
   assert.equal(malformed.isError, true);
   await fiber.dispose();
   assert.equal(ctx.tools.schemas().filter(t => t.name.startsWith('paper_insight_')).length, 0);
-  console.log(JSON.stringify({ ok: true, runtime: 'DSH 0.2.1-rc.2 / Cordis 4.0.5', tools: Plugin.createTools({}).length, modelCalls: requests, sections: 10,
+  console.log(JSON.stringify({ ok: true, runtime: 'Installed DSH / Cordis runtime (DSH_TEST_ROOT)', tools: Plugin.createTools({}).length, modelCalls: requests, sections: 10,
     tests: ['real Cordis load/unload', 'real tool registry canonical output', 'real LLM runtime with fixture adapter', 'local artifact pipeline', 'read-only policy fixture', 'input validation'],
     note: 'Synthetic paper/model responses. No live paid model, UI, SSH or production sandbox backend was used.' }, null, 2));
 } finally { globalThis.fetch = originalFetch; await ctx.fiber.dispose(); await fs.rm(root, { recursive: true, force: true }); }

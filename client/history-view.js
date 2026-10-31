@@ -1,3 +1,4 @@
+import { createDrawer } from './drawer.js';
 export const statusLabels = { completed:'已完成', failed:'分析未完成', cancelled:'已取消', running:'正在分析', fetched:'已取得论文', 'budget-paused':'预算暂停' };
 export const stageLabels = { starting:'准备任务', fetch:'获取论文', research:'检索相关研究', analysis:'分析论文', evidence:'阅读并提取依据', extraction:'提取证据',generation:'撰写报告',review:'核查证据',repair:'修复格式',synthesis:'撰写报告', save:'保存报告' };
 export function explainFailure(message = '') {
@@ -10,8 +11,8 @@ export function explainFailure(message = '') {
 }
 
 export function createHistoryView(React) {
-  const h = React.createElement;
-  return function HistoryView({ runs, selected, setSelected, detail, setDetail, run, busy, modules, onRepair }) {
+  const h = React.createElement, Drawer=createDrawer(React);
+  return function HistoryView({ runs, selected, setSelected, detail, setDetail, run, busy, modules, onRepair, onBudget }) {
     const [editing, setEditing] = React.useState(null);
     const [removing, setRemoving] = React.useState(null);
     React.useEffect(() => { setEditing(null); setRemoving(null); }, [runs]);
@@ -19,7 +20,7 @@ export function createHistoryView(React) {
     const args = r => ({key:r.key,runId:r.runId});
     return h(React.Fragment,null,
       ...runs.map(r => h('article',{key:r.key+'/'+r.runId,className:'pi-result'},
-        h('label',null,h('input',{type:'checkbox', disabled:busy || !!r.record?.deletedAt || r.status!=='completed' || !!r.type,
+        h('label',null,h('input',{type:'checkbox', disabled:busy || (!selected.some(s=>s.runId===r.runId&&s.key===r.key)&&selected.length>=5) || !!r.record?.deletedAt || r.status!=='completed' || !!r.type,
           checked:selected.some(s=>s.runId===r.runId&&s.key===r.key),
           onChange:e=>setSelected(e.target.checked ? [...selected,args(r)] : selected.filter(s=>s.runId!==r.runId||s.key!==r.key))}),r.displayTitle || r.paper?.title || '未识别的论文'),
         h('div',{className:'pi-small'}, (r.record?.deletedAt?'已删除':r.interrupted?'上次分析中断':statusLabels[r.status] || r.status)+' · '+(r.startedAt?new Date(r.startedAt).toLocaleString():'时间未知')),
@@ -30,11 +31,12 @@ export function createHistoryView(React) {
           action('查看详情',()=>{setEditing(null);run('history_detail',args(r));}),
           r.record?.deletedAt ? action('恢复记录',()=>run('history_restore',{...args(r),revision:r.record.revision || 0})) : h(React.Fragment,null,
             r.status==='completed' && r.type!=='discovery' ? action('查看报告',()=>run('report',args(r))) : null,
-            r.canResume ? action(r.status==='budget-paused'?'按当前预算继续':r.hasDocument ? '继续完成分析' : '重新尝试分析',()=>run('resume',args(r))) : null,
+            r.canResume ? action(r.status==='budget-paused'?'调整预算并继续':r.hasDocument ? '继续完成分析' : '重新尝试分析',()=>r.status==='budget-paused'?onBudget(r):run('resume',args(r))) : null,
+            h('details',null,h('summary',null,'更多操作'),
             r.canReanalyze ? action('重新分析选中内容',()=>run('analyze',{...args(r),modules})) : null,
             !r.type && !r.hasDocument && r.status!=='running' ? action('修改论文信息',()=>onRepair(r.input || {})) : null,
             action('编辑记录',()=>setEditing({...args(r),title:r.displayTitle || '',notes:r.record?.notes || '',revision:r.record?.revision || 0})),
-            action('删除记录',()=>setRemoving(r.runId)),
+            action('删除记录',()=>setRemoving(r.runId)))
           )),
         removing===r.runId ? h('div',{className:'pi-note',role:'group','aria-label':'确认删除记录'},
           h('p',null,'删除后会移入“已删除”，论文和报告仍保留，可随时恢复。'),
@@ -45,7 +47,7 @@ export function createHistoryView(React) {
           h('label',null,'我的备注',h('textarea',{value:editing.notes,maxLength:5000,onChange:e=>setEditing({...editing,notes:e.target.value})})),
           h('div',{className:'pi-actions'},h('button',{type:'submit',disabled:busy},'保存修改'),action('取消编辑',()=>setEditing(null)))) : null,
       )),
-      detail ? h('section',{className:'pi-note','aria-label':'研究记录详情'},
+      detail ? h(Drawer,{title:'研究记录详情',onClose:()=>setDetail(null)},
         h('h3',null,detail.displayTitle),
         h('p',null,'论文原名：'+(detail.paper?.title || '未识别')),
         h('p',null,'状态：'+(detail.record?.deletedAt?'已删除':detail.interrupted?'上次分析中断':statusLabels[detail.status] || detail.status)),

@@ -216,7 +216,7 @@ export function createTools(service) {
         })
         .strict(),
       async (args, exec) =>
-        ['prd','poc'].includes(args.format) ? {markdown:renderDraft(await service.archive(exec).load(args.key,args.runId),args.format,args.cardId,await service.archive(exec).optional(args.key,args.runId,'annotations.json')),filename:`${args.format}-draft.md`}:args.format === "json"
+        ['prd','poc'].includes(args.format) ? {markdown:renderDraft(await service.archive(exec).load(args.key,args.runId),args.format,args.cardId,await service.archive(exec).optional(args.key,args.runId,'annotations.json'),{key:args.key,runId:args.runId}),filename:`${args.format}-draft.md`}:args.format === "json"
           ? { report: await service.archive(exec).load(args.key, args.runId) }
           : service.archive(exec).read(args.key, args.runId),
     ),

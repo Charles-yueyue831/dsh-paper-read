@@ -5,7 +5,7 @@ export const readingStyle = `
 .pi-nav-group{margin:0 0 20px}.pi-nav-group strong{display:block;font-size:12px;opacity:.65;margin-bottom:5px}
 .pi-workbench .pi-nav-group button{display:block;border:0;background:transparent;text-align:left;width:100%;font-size:13px;padding:6px 8px;border-radius:6px}
 .pi-workbench .pi-nav-group button:hover,.pi-workbench .pi-nav-group button:focus-visible{background:var(--dsw-alias-bg-layer-3);color:#638cf0}
-.pi-report-body{min-width:0;width:100%;max-width:960px;margin:0 auto;font-size:16px;line-height:1.85}
+.pi-report-body{min-width:0;width:100%;max-width:900px;margin:0 auto;font-size:16px;line-height:1.85}
 .pi-report-body>div>h1,.pi-report-body h1{font-size:clamp(24px,3vw,36px);line-height:1.3;letter-spacing:-.7px;margin:12px 0 24px}
 .pi-report-body .pi-chapter{padding:28px 0;border-top:1px solid var(--dsw-alias-border-l2,#ddd);margin-top:30px}
 .pi-report-body .pi-chapter h2{border:0;padding:0;margin:0 0 18px;font-size:25px;line-height:1.4}
@@ -22,6 +22,6 @@ export const readingStyle = `
 .pi-diagram-svg svg{max-width:100%;min-width:0;width:100%;height:auto;max-height:620px;margin:auto}.pi-diagram-svg{max-height:760px;overflow:auto}
 .pi-diagram-zoom svg{max-width:none;max-height:none;width:auto;min-width:100%}.pi-diagram>button{margin-top:12px;font-size:12px}
 .pi-report-toolbar{padding-bottom:16px;border-bottom:1px solid var(--dsw-alias-border-l2,#ddd)}.pi-report-toolbar .pi-actions{margin-top:0}
-@media(max-width:1000px){.pi-reading-layout{grid-template-columns:1fr}.pi-reading-nav{position:static;max-height:none;border:0;padding:0;display:flex;flex-wrap:wrap;gap:12px}.pi-reading-nav>.pi-eyebrow{width:100%}.pi-nav-group{flex:1 1 140px;margin:0}.pi-report-body{max-width:100%}}
-@media(max-width:600px){.pi-report-card{padding:14px}.pi-report-body{font-size:15px}.pi-report-body .pi-overview{padding:16px}.pi-report-body .pi-chapter h2{font-size:22px}.pi-report-toolbar button{font-size:12px;padding:6px 9px}}
+@container paper (max-width:959px){.pi-reading-layout{grid-template-columns:1fr}.pi-reading-nav{position:static;max-height:none;border:0;padding:0;display:flex;flex-wrap:wrap;gap:12px}.pi-reading-nav>.pi-eyebrow{width:100%}.pi-nav-group{flex:1 1 140px;margin:0}.pi-report-body{max-width:100%}}
+@container paper (max-width:599px){.pi-report-card{padding:14px}.pi-report-body{font-size:15px}.pi-report-body .pi-overview{padding:16px}.pi-report-body .pi-chapter h2{font-size:22px}.pi-report-toolbar button{font-size:12px;padding:6px 9px}}
 `;

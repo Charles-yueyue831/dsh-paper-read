@@ -1,206 +1,35 @@
 {
-  "passed": true,
-  "paper": "ReAct: Synergizing Reasoning and Acting in Language Models",
-  "reference": "arxiv:2210.03629v3",
-  "coverage": "extracted-text",
-  "chunks": 9,
-  "evidenceQuotes": 54,
-  "sections": [
-    "paper",
-    "first-principles",
-    "sandbox",
-    "features",
-    "products",
-    "experience",
-    "landscape",
-    "transfer",
-    "beginner",
-    "decision"
-  ],
-  "findings": 39,
-  "relatedReferences": 12,
-  "modelCalls": 17,
-  "currentRunModelCalls": 0,
-  "sourceGaps": [
-    "semantic-scholar/references",
-    "semantic-scholar/citations"
-  ],
-  "files": [
-    {
-      "name": "manifest.json",
-      "bytes": 3127,
-      "sha256": "1f6a4e2f18a6dff56371f01001251a5d57e007ee57c70348c5f51285ccf04daf"
-    },
-    {
-      "name": "document.json",
-      "bytes": 219558,
-      "sha256": "de1fc09c4f07ffa0d1922c9b6c867ffb03682757387201f368fff8b590049088"
-    },
-    {
-      "name": "source.txt",
-      "bytes": 104736,
-      "sha256": "d11c122079b1649603ea5f255e481c98a8969fa4007c5dc1931ef9d42f379cad"
-    },
-    {
-      "name": "evidence.json",
-      "bytes": 42643,
-      "sha256": "f53c395b2c15b5c9d4a738dbee571c66f4d45c34e6a284454e2d31154a266dad"
-    },
-    {
-      "name": "references.json",
-      "bytes": 27001,
-      "sha256": "55f89cfb6906ee7b9d48b4dca9d4a4d1223315e6c14d51495b20da48514093af"
-    },
-    {
-      "name": "report.json",
-      "bytes": 131129,
-      "sha256": "50ffae2c7351307acca9afe1d121a206b0b7708d856ababbb89d952035965629"
-    },
-    {
-      "name": "report.md",
-      "bytes": 83186,
-      "sha256": "87bb8931e9865e5351a633f90b227d701d892e418f67f18a186a1fbf748bdfe3"
-    },
-    {
-      "name": "references.bib",
-      "bytes": 4030,
-      "sha256": "22cd3ebc888c9583819b9b718eb5954831175862fc7124f40d6382be66cb4d72"
-    }
-  ],
-  "renderingPatch": {
-    "version": "0.2.1",
-    "testedAt": "2026-10-18T07:44:58.994Z",
-    "automatedTests": 55,
-    "fixture": {
-      "table": 1,
-      "mathExpressions": 2,
-      "mermaidDiagrams": 2,
-      "expectedDiagramErrors": 2,
-      "scripts": 0,
-      "unsafeLinks": 0,
-      "duplicateHeadingTargets": 2,
-      "citationFocus": "P1-F1",
-      "downloadSha256": "276ef3fbb6ab5ffea88ca61721e4015dc05ae82362a89d0066cc7d13947e056f"
-    },
-    "realReport": {
-      "reference": "arxiv:2210.03629v3",
-      "sectionHeadings": 15,
-      "mermaidDiagrams": 1,
-      "diagramErrors": 0
-    },
-    "researchBaseline": "0.2.0; original evidence and report files unchanged",
-    "automaticReport": {
-      "runId": "1792309473224-b3c05722",
-      "status": "completed",
-      "modules": [
-        "sandbox"
-      ],
-      "reportSha256": "a43293cd688794eeb40619ae2999d9004fcfa391ab11c76eec41f85d7480366b",
-      "modelCalls": 1,
-      "sourceExact": true
-    }
+  "version": "0.2.5",
+  "passed": false,
+  "status": "blocked-live-model-quota",
+  "checkedAt": "2026-10-31",
+  "tests": 89,
+  "testsPassed": 89,
+  "hostSmoke": {
+    "passed": true,
+    "tools": 28,
+    "modelCalls": 6,
+    "sections": 10,
+    "model": "fixture adapter"
   },
-  "historyPatch": {
-    "version": "0.2.2",
-    "testedAt": "2026-10-18",
-    "automatedTests": 63,
-    "hostTools": 27,
-    "titleImport": {
-      "runId": "1792313970225-40ef514c",
-      "status": "completed",
-      "parentRunId": null,
-      "modules": [
-        "sandbox"
-      ],
-      "modelCalls": 3,
-      "coverage": "partial-text",
-      "validation": {
-        "allSectionsPresent": false,
-        "evidenceIdsResolved": true,
-        "extractQuotesMatched": true,
-        "requestedModulesComplete": true,
-        "limitations": "程序只校验引用存在、短引与原文一致和结构完整；事实蕴含、产品可行性与图表解释仍需人工判断。"
-      },
-      "reportSha256": "82a2a77812d83b56c7c435a2a29f1cafdbf06dfcd3b5eba113e269a666d4c1f5"
-    },
-    "resumeFromSimulatedInterruption": {
-      "runId": "1792314316435-6c9fc403",
-      "status": "completed",
-      "parentRunId": "1792314297770-1332f596",
-      "modules": [
-        "sandbox"
-      ],
-      "modelCalls": 1,
-      "coverage": "partial-text",
-      "validation": {
-        "allSectionsPresent": false,
-        "evidenceIdsResolved": true,
-        "extractQuotesMatched": true,
-        "requestedModulesComplete": true,
-        "limitations": "程序只校验引用存在、短引与原文一致和结构完整；事实蕴含、产品可行性与图表解释仍需人工判断。"
-      },
-      "reportSha256": "99a8d72d13e62cba97ba50760785b98e5c6bab122e7a66ee45ce62c17c2f9c2c"
-    },
-    "browserChecks": [
-      "automatic history load",
-      "title input through real academic sources and host model",
-      "automatic report rendering",
-      "rename and notes saved",
-      "search by title",
-      "soft delete hides record",
-      "restore preserves report",
-      "pasted diagnostic rejected without new archive",
-      "resume button creates a separate completed report"
+  "browser": {
+    "nativeHost": true,
+    "fourViews": true,
+    "evidenceAnnotationsPersisted": true,
+    "escapeFocusRestored": true,
+    "containerWidths": [
+      1280,
+      1050,
+      800,
+      390
     ],
-    "browserConsoleErrors": 0,
-    "sourceLimits": [
-      "Semantic Scholar title search HTTP 429",
-      "related references and citations unavailable for this newly indexed paper"
-    ],
-    "scope": "One sandbox module, two of nine text chunks; a workflow regression test, not a full-paper ten-module review."
+    "horizontalOverflow": false,
+    "publicSearch": true
   },
-  "visualReportPatch": {
-    "version": "0.2.3",
-    "date": "2026-10-18",
-    "unitTests": 70,
-    "host": {
-      "tools": 27,
-      "calls": 6,
-      "synthetic": true
-    },
-    "live": {
-      "paper": "https://arxiv.org/abs/2210.03629v3",
-      "runId": "1792335770859-c6506764",
-      "modelCalls": 4,
-      "modules": [
-        "paper",
-        "sandbox",
-        "experience",
-        "decision"
-      ],
-      "coverage": "partial-text",
-      "selection": {
-        "totalChunks": 9,
-        "selectedChunks": 2
-      },
-      "analysisDiagrams": 4
-    },
-    "renderContinuation": {
-      "runId": "1792335998548-e28dd7ea",
-      "modelCalls": 0,
-      "sectionsUnchanged": true
-    },
-    "browser": {
-      "svgCount": 5,
-      "diagramErrors": 0,
-      "encodedLabelArtifacts": 0,
-      "sourceMatchesFile": true,
-      "oldReportCompatible": true,
-      "citationUnfoldAndFocus": true,
-      "expandCollapse": true,
-      "zoom": true,
-      "unsafeDiagramFallback": true
-    },
-    "packedInstallTests": 70
-  }
+  "liveModel": {
+    "passed": false,
+    "paper": "arxiv:2210.03629",
+    "error": "QUOTA / HTTP 402"
+  },
+  "published": false
 }
