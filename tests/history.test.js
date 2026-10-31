@@ -25,6 +25,22 @@ async function fixture(t) {
   return {root,doc,service,exec,call,setMode:value=>mode=value,archive:service.archive(exec),tools};
 }
 
+test('human reviews are versioned independently, reject stale edits, and never mutate original reports',async t=>{
+ const {call,archive}=await fixture(t);
+ const created=await call('analyze',{reference:paper.id,modules:['paper']});
+ const id={key:created.key,runId:created.runId};
+ const before=await archive.read(id.key,id.runId);
+ const patch={...id,type:'finding',targetId:before.reportData.sections[0].findings[0].id,reportHash:before.reportHash,revision:0,status:'confirmed',notes:'Manually checked source.'};
+ const results=await Promise.allSettled([call('annotate',patch),call('annotate',patch)]);
+ assert.equal(results.filter(r=>r.status==='fulfilled').length,1);
+ const after=await archive.read(id.key,id.runId);
+ assert.equal(after.annotations.revision,1);assert.equal(after.markdown,before.markdown);assert.deepEqual(after.reportData,before.reportData);
+ await assert.rejects(call('annotate',{...patch,revision:1,reportHash:'a'.repeat(64)}),/报告已变化/);
+ await assert.rejects(call('annotate',{...patch,revision:1,targetId:'missing'}),/不存在/);
+ await call('annotate',{...patch,revision:1,status:'questioned',notes:'Need a narrower claim.'});
+ const revisions=await archive.load(id.key,id.runId,'annotations.json');assert.equal(revisions.history.length,2);assert.equal(revisions.entries[0].status,'questioned');
+});
+
 test('history CRUD persists metadata, full-text filters and recoverable deletion without changing the report',async t=>{
   const {call,archive}=await fixture(t);
   const created=await call('analyze',{reference:paper.id,modules:['sandbox']});

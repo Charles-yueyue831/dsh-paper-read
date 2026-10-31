@@ -1,5 +1,6 @@
 import { readingStyle } from "./reading-style.js";
 import { createReportView } from "./report-view.js";
+import { createResearchControls } from './research-controls.js';
 import { createHistoryView, statusLabels, stageLabels, explainFailure } from "./history-view.js";
 /* Native Harness client module; React is supplied by the host to avoid duplicate runtimes. */
 window.__ModuleLoader__.load({
@@ -9,6 +10,7 @@ window.__ModuleLoader__.load({
     const h = React.createElement;
     const { MarkdownText } = require("@deepseek-ai/dsh-client-ui-primitives");
     const ReportView = createReportView(React, MarkdownText);
+    const ResearchControls=createResearchControls(React);
     const HistoryView = createHistoryView(React);
     const { useState, useEffect, useRef } = React;
     const labels = {
@@ -58,6 +60,10 @@ window.__ModuleLoader__.load({
         [detail, setDetail] = useState(null),
         [submitting, setSubmitting] = useState(false),
         [report, setReport] = useState(""),
+        [bundle,setBundle]=useState(null),
+        [mode,setMode]=useState(''),
+        [maxCalls,setMaxCalls]=useState('64'),
+        [maxTotalTokens,setMaxTotalTokens]=useState(''),
         [status, setStatus] = useState("选择会话以使用对应工作区与模型。"),
         [error, setError] = useState(""),
         [job, setJob] = useState(null),
@@ -95,7 +101,7 @@ window.__ModuleLoader__.load({
         refresh();
       }, []);
       useEffect(() => {
-        setRuns([]); setSelected([]); setReport(''); setDetail(null); setPapers([]); setOffset(0);
+        setRuns([]); setSelected([]); setReport(''); setBundle(null); setDetail(null); setPapers([]); setOffset(0);
         if (session) run('library', historyArgs(0));
       }, [session]);
       useEffect(() => {
@@ -108,7 +114,7 @@ window.__ModuleLoader__.load({
             if (stopped) return;
             setStatus(
               value.status === "running"
-                ? `正在处理：${stageLabels[value.progress?.stage] || "分析中"} ${value.progress?.completed || ""}${value.progress?.total ? "/" + value.progress.total : ""}`
+                ? `正在处理：${stageLabels[value.progress?.stage] || "分析中"} ${value.progress?.completed || ""}${value.progress?.total ? "/" + value.progress.total : ""}${value.progress?.usage?` · 已调用 ${value.progress.usage.calls}/${value.progress.budget.maxCalls} 次 · 已知 ${value.progress.usage.knownTokens} Token，${value.progress.usage.unknownUsageCalls} 次用量未知`:''}`
                 : value.status === "completed"
                   ? "已完成，结果已返回。"
                   : statusLabels[value.status] || "任务未完成",
@@ -143,7 +149,11 @@ window.__ModuleLoader__.load({
             } else if (job.action === "discover_updates") {
               setPapers(r.newPapers);
               setStatus(`发现 ${r.newPapers.length} 篇新增或更新论文。`);
-            } else if (r.markdown) { setReport(r.markdown); if(job.reloadHistory) { await queueHistory(); return; } }
+            } else if (r.markdown) {
+              if(job.action==='export_report'){const url=URL.createObjectURL(new Blob([r.markdown],{type:'text/markdown;charset=utf-8'}));const a=document.createElement('a');a.href=url;a.download=r.filename||'research-draft.md';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}
+              else{setReport(r.markdown);setBundle(r);}
+              if(job.reloadHistory) { await queueHistory(); return; }
+            }
             else if (r.reportPath) {
               setStatus("分析已完成，正在读取完整报告…");
               const loaded = await api("/run", {
@@ -185,6 +195,11 @@ window.__ModuleLoader__.load({
       const run = async (action, args = {}) => {
         if (submitLock.current) return;
         setError("");
+        if(['analyze','resume'].includes(action)){
+          const calls=Number(maxCalls),tokens=maxTotalTokens?Number(maxTotalTokens):null;
+          if(!Number.isInteger(calls)||calls<1||calls>1000||tokens!==null&&(!Number.isInteger(tokens)||tokens<1||tokens>10000000)){setError('请输入有效预算：调用次数 1–1000，Token 为正整数或留空。');return;}
+          args={...args,maxCalls:calls,maxTotalTokens:tokens,...(mode&&!args.modules?{mode}:{})};
+        }
         if (action === 'analyze' && !modules.length) { setError('请至少选择一项分析内容。'); return; }
         if (!session) {
           setError(
@@ -346,6 +361,9 @@ window.__ModuleLoader__.load({
               "section",
               { className: "pi-card" },
               h("h2", null, "分析论文"),
+              h('label',null,'研究模式',h('select',{value:mode,onChange:e=>{const v=e.target.value;setMode(v);if(v)setModules(({quick:['paper','beginner'],deep:['paper','first-principles','landscape','decision'],product:['paper','sandbox','features','products','experience','decision']})[v]);}},h('option',{value:''},'自选内容'),h('option',{value:'quick'},'快速阅读'),h('option',{value:'deep'},'深度研究'),h('option',{value:'product'},'产品研究'))),
+              input('最多模型调用次数（继续研究时含此前调用）',maxCalls,setMaxCalls,'number'),
+              h('details',null,h('summary',null,'Token 预算与用量说明'),input('总 Token 硬限制（可留空）',maxTotalTokens,setMaxTotalTokens,'number'),h('p',null,'不支持可信计数的模型会在调用前暂停；可留空并使用调用次数限制。实际用量或费用未知时会明确标注。')),
               h(
                 "label",
                 null,
@@ -498,6 +516,7 @@ window.__ModuleLoader__.load({
                 "section",
                 { className: "pi-card pi-report-card", ref: reportAnchor },
                 h("h2", null, "研究报告"),
+                report ? h(ResearchControls,{bundle,run,busy}) : null,
                 report
                   ? h(ReportView, {
                       text: report,

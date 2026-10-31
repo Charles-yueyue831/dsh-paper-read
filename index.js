@@ -10,6 +10,8 @@ import {
   aggregateResearch,
 } from "./lib/knowledge.js";
 import { installWeb } from "./lib/web.js";
+import { chapterLabels } from './lib/coverage.js';
+import { renderDraft } from './lib/opportunities.js';
 
 export const name = "paper-insight";
 export const inject = ["tools", "llm", "sandboxPolicy"];
@@ -34,6 +36,7 @@ const inputFields = {
   key: runFields.key.optional(),
   runId: runFields.runId.optional(),
 };
+const researchFields={mode:z.enum(['quick','deep','product']).optional(),maxCalls:z.number().int().min(1).max(1000).optional(),maxTotalTokens:z.number().int().min(1).max(10000000).nullable().optional()};
 const hasInput = (v) => Boolean(v.reference || v.file || (v.key && v.runId));
 const documentArgs = z
   .object({ reference: text.optional(), file: text.optional() })
@@ -42,11 +45,14 @@ const documentArgs = z
 const analyzeArgs = z
   .object({
     ...inputFields,
+    ...researchFields,
+    supplementChapters:z.array(z.enum(Object.keys(chapterLabels))).min(1).max(10).optional(),
     modules: z.array(z.enum(MODULE_IDS)).min(1).max(10).optional(),
     refreshResearch: z.boolean().optional(),
   })
   .strict()
-  .refine(hasInput, "提供 reference/file 或 key+runId");
+  .refine(hasInput, "提供 reference/file 或 key+runId")
+  .refine(v=>!v.supplementChapters?.length || Boolean(v.key&&v.runId),"补充阅读需要已有记录的 key 和 runId");
 const searchArgs = z
   .object({
     query: z.string().trim().min(1).max(600),
@@ -142,7 +148,7 @@ export function createTools(service) {
       "resume",
       "从失败/取消检查点继续，只执行尚未完成的阶段；新建版本保留旧结果。",
       z
-        .object({ ...runFields, refreshResearch: z.boolean().optional() })
+        .object({ ...runFields, ...researchFields, refreshResearch: z.boolean().optional() })
         .strict(),
       (args, exec) => service.analyze({ ...args, resume: true }, exec),
     ),
@@ -151,7 +157,7 @@ export function createTools(service) {
         tool,
         `仅执行 ${module} 分析模块；reference/file 导入或 key/runId 复用材料。生成独立版本。`,
         z
-          .object(inputFields)
+          .object({...inputFields,...researchFields})
           .strict()
           .refine(hasInput, "需要论文输入或归档标识"),
         (args, exec) => service.analyze({ ...args, modules: [module] }, exec),
@@ -172,7 +178,7 @@ export function createTools(service) {
           limit: z.number().int().min(1).max(200).default(30),
           offset: z.number().int().min(0).max(10000).default(0),
           deleted: z.boolean().default(false),
-          status: z.enum(['completed','failed','cancelled','running','fetched']).optional(),
+          status: z.enum(['completed','failed','cancelled','running','fetched','budget-paused']).optional(),
         })
         .strict(),
       (args, exec) =>
@@ -194,17 +200,23 @@ export function createTools(service) {
     definition("report", "读取已有 Markdown 报告。", runArgs, (args, exec) =>
       service.archive(exec).read(args.key, args.runId),
     ),
+    definition('annotate','记录人工结论复核或机会优先级，保留原报告及修订历史。',
+      z.object({...runFields,reportHash:z.string().regex(/^[a-f0-9]{64}$/),revision:z.number().int().min(0),targetId:z.string().min(1).max(100),notes:z.string().max(5000).default(''),
+        type:z.enum(['finding','opportunity']),status:z.enum(['confirmed','questioned','pending']).optional(),priority:z.enum(['high','medium','low']).optional()}).strict().superRefine((v,c)=>{
+          if(v.type==='finding'&&(!v.status||v.priority)||v.type==='opportunity'&&(!v.priority||v.status))c.addIssue({code:'custom',message:'结论需状态，机会需优先级'});
+        }),({key,runId,...patch},exec)=>service.archive(exec,true).annotate(key,runId,patch)),
     definition(
       "export_report",
       "返回已归档 Markdown 或 JSON 报告，不重新调用模型。",
       z
         .object({
           ...runFields,
-          format: z.enum(["markdown", "json"]).default("markdown"),
+          format: z.enum(["markdown", "json",'prd','poc']).default("markdown"),
+          cardId:z.string().max(100).optional(),
         })
         .strict(),
       async (args, exec) =>
-        args.format === "json"
+        ['prd','poc'].includes(args.format) ? {markdown:renderDraft(await service.archive(exec).load(args.key,args.runId),args.format,args.cardId,await service.archive(exec).optional(args.key,args.runId,'annotations.json')),filename:`${args.format}-draft.md`}:args.format === "json"
           ? { report: await service.archive(exec).load(args.key, args.runId) }
           : service.archive(exec).read(args.key, args.runId),
     ),

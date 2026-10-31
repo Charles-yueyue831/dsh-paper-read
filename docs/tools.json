@@ -76,6 +76,10 @@
         "sort"
       ],
       "additionalProperties": false
+    },
+    "output": {
+      "type": "object",
+      "additionalProperties": true
     }
   },
   {
@@ -97,6 +101,10 @@
         }
       },
       "additionalProperties": false
+    },
+    "output": {
+      "type": "object",
+      "additionalProperties": true
     }
   },
   {
@@ -118,6 +126,10 @@
         }
       },
       "additionalProperties": false
+    },
+    "output": {
+      "type": "object",
+      "additionalProperties": true
     }
   },
   {
@@ -145,6 +157,51 @@
           "type": "string",
           "pattern": "^\\d+-[a-f0-9]{8}$"
         },
+        "mode": {
+          "type": "string",
+          "enum": [
+            "quick",
+            "deep",
+            "product"
+          ]
+        },
+        "maxCalls": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1000
+        },
+        "maxTotalTokens": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 10000000
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "supplementChapters": {
+          "minItems": 1,
+          "maxItems": 10,
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "abstract",
+              "introduction",
+              "related-work",
+              "methods",
+              "experiments",
+              "results",
+              "limitations",
+              "conclusion",
+              "references",
+              "unknown"
+            ]
+          }
+        },
         "modules": {
           "minItems": 1,
           "maxItems": 10,
@@ -170,6 +227,10 @@
         }
       },
       "additionalProperties": false
+    },
+    "output": {
+      "type": "object",
+      "additionalProperties": true
     }
   },
   {
@@ -187,6 +248,31 @@
           "type": "string",
           "pattern": "^\\d+-[a-f0-9]{8}$"
         },
+        "mode": {
+          "type": "string",
+          "enum": [
+            "quick",
+            "deep",
+            "product"
+          ]
+        },
+        "maxCalls": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1000
+        },
+        "maxTotalTokens": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 10000000
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
         "refreshResearch": {
           "type": "boolean"
         }
@@ -196,6 +282,10 @@
         "runId"
       ],
       "additionalProperties": false
+    },
+    "output": {
+      "type": "object",
+      "additionalProperties": true
     }
   },
   {
@@ -222,9 +312,38 @@
         "runId": {
           "type": "string",
           "pattern": "^\\d+-[a-f0-9]{8}$"
+        },
+        "mode": {
+          "type": "string",
+          "enum": [
+            "quick",
+            "deep",
+            "product"
+          ]
+        },
+        "maxCalls": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1000
+        },
+        "maxTotalTokens": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 10000000
+            },
+            {
+              "type": "null"
+            }
+          ]
         }
       },
       "additionalProperties": false
+    },
+    "output": {
+      "type": "object",
+      "additionalProperties": true
     }
   },
   {
@@ -251,9 +370,38 @@
         "runId": {
           "type": "string",
           "pattern": "^\\d+-[a-f0-9]{8}$"
+        },
+        "mode": {
+          "type": "string",
+          "enum": [
+            "quick",
+            "deep",
+            "product"
+          ]
+        },
+        "maxCalls": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1000
+        },
+        "maxTotalTokens": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 10000000
+            },
+            {
+              "type": "null"
+            }
+          ]
         }
       },
       "additionalProperties": false
+    },
+    "output": {
+      "type": "object",
+      "additionalProperties": true
     }
   },
   {
@@ -280,9 +428,38 @@
         "runId": {
           "type": "string",
           "pattern": "^\\d+-[a-f0-9]{8}$"
+        },
+        "mode": {
+          "type": "string",
+          "enum": [
+            "quick",
+            "deep",
+            "product"
+          ]
+        },
+        "maxCalls": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1000
+        },
+        "maxTotalTokens": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 10000000
+            },
+            {
+              "type": "null"
+            }
+          ]
         }
       },
       "additionalProperties": false
+    },
+    "output": {
+      "type": "object",
+      "additionalProperties": true
     }
   },
   {
@@ -309,9 +486,38 @@
         "runId": {
           "type": "string",
           "pattern": "^\\d+-[a-f0-9]{8}$"
+        },
+        "mode": {
+          "type": "string",
+          "enum": [
+            "quick",
+            "deep",
+            "product"
+          ]
+        },
+        "maxCalls": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1000
+        },
+        "maxTotalTokens": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 10000000
+            },
+            {
+              "type": "null"
+            }
+          ]
         }
       },
       "additionalProperties": false
+    },
+    "output": {
+      "type": "object",
+      "additionalProperties": true
     }
   },
   {
@@ -338,9 +544,38 @@
         "runId": {
           "type": "string",
           "pattern": "^\\d+-[a-f0-9]{8}$"
+        },
+        "mode": {
+          "type": "string",
+          "enum": [
+            "quick",
+            "deep",
+            "product"
+          ]
+        },
+        "maxCalls": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1000
+        },
+        "maxTotalTokens": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 10000000
+            },
+            {
+              "type": "null"
+            }
+          ]
         }
       },
       "additionalProperties": false
+    },
+    "output": {
+      "type": "object",
+      "additionalProperties": true
     }
   },
   {
@@ -367,9 +602,38 @@
         "runId": {
           "type": "string",
           "pattern": "^\\d+-[a-f0-9]{8}$"
+        },
+        "mode": {
+          "type": "string",
+          "enum": [
+            "quick",
+            "deep",
+            "product"
+          ]
+        },
+        "maxCalls": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1000
+        },
+        "maxTotalTokens": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 10000000
+            },
+            {
+              "type": "null"
+            }
+          ]
         }
       },
       "additionalProperties": false
+    },
+    "output": {
+      "type": "object",
+      "additionalProperties": true
     }
   },
   {
@@ -396,9 +660,38 @@
         "runId": {
           "type": "string",
           "pattern": "^\\d+-[a-f0-9]{8}$"
+        },
+        "mode": {
+          "type": "string",
+          "enum": [
+            "quick",
+            "deep",
+            "product"
+          ]
+        },
+        "maxCalls": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1000
+        },
+        "maxTotalTokens": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 10000000
+            },
+            {
+              "type": "null"
+            }
+          ]
         }
       },
       "additionalProperties": false
+    },
+    "output": {
+      "type": "object",
+      "additionalProperties": true
     }
   },
   {
@@ -425,9 +718,38 @@
         "runId": {
           "type": "string",
           "pattern": "^\\d+-[a-f0-9]{8}$"
+        },
+        "mode": {
+          "type": "string",
+          "enum": [
+            "quick",
+            "deep",
+            "product"
+          ]
+        },
+        "maxCalls": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1000
+        },
+        "maxTotalTokens": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 10000000
+            },
+            {
+              "type": "null"
+            }
+          ]
         }
       },
       "additionalProperties": false
+    },
+    "output": {
+      "type": "object",
+      "additionalProperties": true
     }
   },
   {
@@ -454,9 +776,38 @@
         "runId": {
           "type": "string",
           "pattern": "^\\d+-[a-f0-9]{8}$"
+        },
+        "mode": {
+          "type": "string",
+          "enum": [
+            "quick",
+            "deep",
+            "product"
+          ]
+        },
+        "maxCalls": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1000
+        },
+        "maxTotalTokens": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 10000000
+            },
+            {
+              "type": "null"
+            }
+          ]
         }
       },
       "additionalProperties": false
+    },
+    "output": {
+      "type": "object",
+      "additionalProperties": true
     }
   },
   {
@@ -481,6 +832,10 @@
         "references"
       ],
       "additionalProperties": false
+    },
+    "output": {
+      "type": "object",
+      "additionalProperties": true
     }
   },
   {
@@ -518,7 +873,8 @@
             "failed",
             "cancelled",
             "running",
-            "fetched"
+            "fetched",
+            "budget-paused"
           ]
         }
       },
@@ -529,6 +885,10 @@
         "deleted"
       ],
       "additionalProperties": false
+    },
+    "output": {
+      "type": "object",
+      "additionalProperties": true
     }
   },
   {
@@ -552,6 +912,10 @@
         "runId"
       ],
       "additionalProperties": false
+    },
+    "output": {
+      "type": "object",
+      "additionalProperties": true
     }
   },
   {
@@ -589,6 +953,10 @@
         "runId"
       ],
       "additionalProperties": false
+    },
+    "output": {
+      "type": "object",
+      "additionalProperties": true
     }
   },
   {
@@ -617,6 +985,10 @@
         "runId"
       ],
       "additionalProperties": false
+    },
+    "output": {
+      "type": "object",
+      "additionalProperties": true
     }
   },
   {
@@ -645,6 +1017,10 @@
         "runId"
       ],
       "additionalProperties": false
+    },
+    "output": {
+      "type": "object",
+      "additionalProperties": true
     }
   },
   {
@@ -668,6 +1044,84 @@
         "runId"
       ],
       "additionalProperties": false
+    },
+    "output": {
+      "type": "object",
+      "additionalProperties": true
+    }
+  },
+  {
+    "name": "paper_insight_annotate",
+    "description": "记录人工结论复核或机会优先级，保留原报告及修订历史。",
+    "input": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "key": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{20}$"
+        },
+        "runId": {
+          "type": "string",
+          "pattern": "^\\d+-[a-f0-9]{8}$"
+        },
+        "reportHash": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "revision": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "targetId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "notes": {
+          "default": "",
+          "type": "string",
+          "maxLength": 5000
+        },
+        "type": {
+          "type": "string",
+          "enum": [
+            "finding",
+            "opportunity"
+          ]
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "confirmed",
+            "questioned",
+            "pending"
+          ]
+        },
+        "priority": {
+          "type": "string",
+          "enum": [
+            "high",
+            "medium",
+            "low"
+          ]
+        }
+      },
+      "required": [
+        "key",
+        "runId",
+        "reportHash",
+        "revision",
+        "targetId",
+        "notes",
+        "type"
+      ],
+      "additionalProperties": false
+    },
+    "output": {
+      "type": "object",
+      "additionalProperties": true
     }
   },
   {
@@ -690,8 +1144,14 @@
           "type": "string",
           "enum": [
             "markdown",
-            "json"
+            "json",
+            "prd",
+            "poc"
           ]
+        },
+        "cardId": {
+          "type": "string",
+          "maxLength": 100
         }
       },
       "required": [
@@ -700,6 +1160,10 @@
         "format"
       ],
       "additionalProperties": false
+    },
+    "output": {
+      "type": "object",
+      "additionalProperties": true
     }
   },
   {
@@ -737,6 +1201,10 @@
         "reports"
       ],
       "additionalProperties": false
+    },
+    "output": {
+      "type": "object",
+      "additionalProperties": true
     }
   },
   {
@@ -765,6 +1233,10 @@
         "after"
       ],
       "additionalProperties": false
+    },
+    "output": {
+      "type": "object",
+      "additionalProperties": true
     }
   },
   {
@@ -785,6 +1257,10 @@
         }
       },
       "additionalProperties": false
+    },
+    "output": {
+      "type": "object",
+      "additionalProperties": true
     }
   },
   {
@@ -819,6 +1295,10 @@
         "limit"
       ],
       "additionalProperties": false
+    },
+    "output": {
+      "type": "object",
+      "additionalProperties": true
     }
   },
   {
@@ -839,6 +1319,10 @@
         "limit"
       ],
       "additionalProperties": false
+    },
+    "output": {
+      "type": "object",
+      "additionalProperties": true
     }
   }
 ]

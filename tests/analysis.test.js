@@ -36,6 +36,10 @@ test('model adapter uses host route, no tools, authoritative block-end and check
   const model = createHarnessModel(ctx, exec, config); assert.equal(await model.generate('system', 'data'), 'correct');
   assert.equal(options.provider, 'existing'); assert.equal(options.tools, undefined); assert.equal(options.messages[0].role, 'user');
 });
+test('provider errors expose a bounded code and status without leaking raw diagnostics',async()=>{
+ const ctx={llm:{prepareCall:async route=>({config:route,async *stream(){yield {type:'finish',reason:{kind:'error',failure:{code:'QUOTA',status:402,message:'secret credential data'}}};}})}};
+ await assert.rejects(createHarnessModel(ctx,{}, {...config,provider:'p',model:'m'}).generate('',''),e=>e.code==='QUOTA'&&/402/.test(e.message)&&!e.message.includes('secret'));
+});
 test('model adapter rejects truncated finish', async () => {
   const ctx = { llm: { prepareCall: async route => ({ config: route, async *stream() { yield { type: 'text-delta', index: 0, text: '{}' }; yield { type: 'finish', reason: { kind: 'max-tokens' } }; } }) } };
   await assert.rejects(createHarnessModel(ctx, {}, { ...config, provider: 'p', model: 'm' }).generate('', ''), /max-tokens/);

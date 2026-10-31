@@ -49,7 +49,7 @@ test('full analysis yields four evidenced diagrams without additional model call
   const doc={paper,coverage:'partial-text',warnings:['sampled'],chunks:[{id:'P1',locator:'p1',text:passage}],totalChunks:2,selectedChunks:1};
   const report=await analyzeDocument(doc,research,fakeModel(),parseConfig({maxChunks:1}));
   assert.equal(report.calls.length,6);
-  assert.equal(report.promptVersion,'0.2.3');
+  assert.equal(report.promptVersion,'0.2.4');
   assert.equal(report.sections.filter(s=>s.visual).length,4);
   const md=renderReport(report);
   assert.equal(splitReport(md).filter(p=>p.type==='mermaid').length,4);

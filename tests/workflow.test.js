@@ -17,6 +17,7 @@ import {
 } from "./fixtures.js";
 import { researchArtifacts } from "../lib/workflow.js";
 import { MODULE_FIELDS } from "../lib/modules.js";
+import { chunksFromSegments } from '../lib/content.js';
 
 async function fixture(t) {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), "paper-v2-"));
@@ -68,6 +69,52 @@ async function fixture(t) {
     counts: () => ({ reads, related }),
   };
 }
+test('supplement reads only new chapters and regenerates modules in a new immutable run',async t=>{
+ const {service,exec}=await fixture(t);
+ const segments=['Methods','Experiments','Limitations'].map(locator=>({locator,text:locator+'\n'+passage}));
+ service.config.maxChunks=1;
+ const doc={paper,format:'txt',warnings:[],segments,coverage:'partial-text',...chunksFromSegments(segments,12000,1)};
+ service.reader.read=async()=>doc;
+ const original=await service.analyze({reference:paper.id,modules:['paper']},exec), archive=service.archive(exec);
+ const before=await archive.load(original.key,original.runId);
+ const next=await service.analyze({key:original.key,runId:original.runId,supplementChapters:['limitations'],modules:['paper']},exec);
+ const after=await archive.load(next.key,next.runId);
+ assert.equal(after.evidence.length,2);assert.deepEqual(after.evidence[0],before.evidence[0]);
+ assert.equal(after.calls.filter(c=>c.stage==='extraction').length,1);assert.equal(after.calls.filter(c=>c.stage==='generation').length,1);
+ assert.equal(after.selection.processedChunks,2);assert.deepEqual(await archive.load(original.key,original.runId),before);
+});
+
+test('high-risk review uses the same budget and resumes without regenerating sections',async t=>{
+ const {service,exec}=await fixture(t);
+ service.makeModel=()=>{
+   const m=fakeModel(),generate=m.generate.bind(m);
+   m.generate=async(...args)=>{const value=JSON.parse(await generate(...args));for(const s of value.sections||[])s.findings[0].statement='Claimed 20% performance improvement requires checking the original experimental conditions.';return JSON.stringify(value);};
+   return m;
+ };
+ let failure;try{await service.analyze({reference:paper.id,modules:['paper'],maxCalls:3},exec);}catch(e){failure=e;}
+ assert.equal(failure.code,'BUDGET_EXHAUSTED');
+ const archive=service.archive(exec),cp=await archive.load(failure.key,failure.runId,'checkpoint.json');
+ assert.equal(cp.sections.length,1);assert.equal(cp.evidence.length,2);
+ const result=await service.analyze({key:failure.key,runId:failure.runId,resume:true,maxCalls:4},exec);
+ const report=await archive.load(result.key,result.runId);
+ assert.equal(report.calls.length,1);assert.equal(report.calls[0].stage,'review');assert.equal(report.usage.calls,4);
+ assert.equal(report.sections[0].findings[0].kind,'paper-fact');assert.equal(report.sections[0].findings[0].review.status,'manual');
+});
+
+test('budget pause survives restart; continuation uses cumulative calls without changing parent',async t=>{
+ const {service,exec,counts}=await fixture(t);
+ let error;
+ try{await service.analyze({reference:paper.id,maxCalls:1,modules:['paper']},exec);}catch(e){error=e;}
+ assert.equal(error.code,'BUDGET_EXHAUSTED');
+ const archive=service.archive(exec),before=await archive.load(error.key,error.runId,'checkpoint.json');
+ assert.equal(before.ledger.length,1);assert.equal(before.evidence.length,1);
+ assert.equal((await archive.load(error.key,error.runId,'manifest.json')).status,'budget-paused');
+ const result=await service.analyze({key:error.key,runId:error.runId,resume:true,maxCalls:3},exec);
+ const report=await archive.load(result.key,result.runId);
+ assert.equal(report.usage.calls,3);assert.equal(report.calls.length,2);
+ assert.equal(counts().reads,1);assert.deepEqual(await archive.load(error.key,error.runId,'checkpoint.json'),before);
+});
+
 test("resume preserves successful evidence and sections, and writes a separate immutable version", async (t) => {
   const { service, exec, counts } = await fixture(t);
   let n = 0;

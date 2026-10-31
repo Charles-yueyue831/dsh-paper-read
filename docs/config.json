@@ -71,6 +71,25 @@
       "minimum": 1,
       "maximum": 50
     },
+    "maxCalls": {
+      "default": 64,
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 1000
+    },
+    "maxTotalTokens": {
+      "default": null,
+      "anyOf": [
+        {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 10000000
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
     "chunkChars": {
       "default": 12000,
       "type": "integer",
@@ -151,6 +170,8 @@
     "webEnabled",
     "maxPapers",
     "maxChunks",
+    "maxCalls",
+    "maxTotalTokens",
     "chunkChars",
     "maxOutputTokens",
     "maxExtractionTokens",

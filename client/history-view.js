@@ -1,5 +1,5 @@
-export const statusLabels = { completed:'已完成', failed:'分析未完成', cancelled:'已取消', running:'正在分析', fetched:'已取得论文' };
-export const stageLabels = { starting:'准备任务', fetch:'获取论文', research:'检索相关研究', analysis:'分析论文', evidence:'阅读并提取依据', synthesis:'撰写报告', save:'保存报告' };
+export const statusLabels = { completed:'已完成', failed:'分析未完成', cancelled:'已取消', running:'正在分析', fetched:'已取得论文', 'budget-paused':'预算暂停' };
+export const stageLabels = { starting:'准备任务', fetch:'获取论文', research:'检索相关研究', analysis:'分析论文', evidence:'阅读并提取依据', extraction:'提取证据',generation:'撰写报告',review:'核查证据',repair:'修复格式',synthesis:'撰写报告', save:'保存报告' };
 export function explainFailure(message = '') {
   if (/标题请先搜索/.test(message)) return '先前版本未能识别论文标题。现在可以重新尝试分析，系统会先检索这篇论文。';
   if (/max-tokens|MODEL_OUTPUT_TRUNCATED/.test(message)) return '模型输出过长，本次分析未完成。可减少选中的分析内容后重试。';
@@ -30,7 +30,7 @@ export function createHistoryView(React) {
           action('查看详情',()=>{setEditing(null);run('history_detail',args(r));}),
           r.record?.deletedAt ? action('恢复记录',()=>run('history_restore',{...args(r),revision:r.record.revision || 0})) : h(React.Fragment,null,
             r.status==='completed' && r.type!=='discovery' ? action('查看报告',()=>run('report',args(r))) : null,
-            r.canResume ? action(r.hasDocument ? '继续完成分析' : '重新尝试分析',()=>run('resume',args(r))) : null,
+            r.canResume ? action(r.status==='budget-paused'?'按当前预算继续':r.hasDocument ? '继续完成分析' : '重新尝试分析',()=>run('resume',args(r))) : null,
             r.canReanalyze ? action('重新分析选中内容',()=>run('analyze',{...args(r),modules})) : null,
             !r.type && !r.hasDocument && r.status!=='running' ? action('修改论文信息',()=>onRepair(r.input || {})) : null,
             action('编辑记录',()=>setEditing({...args(r),title:r.displayTitle || '',notes:r.record?.notes || '',revision:r.record?.revision || 0})),

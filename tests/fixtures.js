@@ -4,8 +4,10 @@ export const paper = { id: 'arxiv:2601.00001v1', arxivId: '2601.00001v1', title:
 export const research = { retrievedAt: '2026-10-17T00:00:00Z', references: [], citations: [], discovery: [], errors: [], coverage: 'Synthetic fixtures only' };
 export function modelResponse(input) {
   const data = JSON.parse(input.split('\n上次结构校验失败：')[0]);
+  if(data.reviewCandidates)return JSON.stringify({reviews:data.reviewCandidates.map(c=>({id:c.id,status:'manual',reason:'合成审查：缺少可靠的实验条件信息。',dimensions:{object:'unknown',dataset:'unknown',baseline:'unknown',metric:'unknown',conditions:'unknown'}}))});
   if (data.requiredSectionIds) return JSON.stringify({ sections: data.requiredSectionIds.map(id => ({
     id, details: Object.fromEntries((data.requiredDetailFields?.[id] || []).map(key => [key, '合成测试说明；不代表真实研究结论。'])), summary: `这是 ${id} 章节的合成测试摘要，不是真实论文分析。`,
+    ...(data.opportunitySectionIds?.includes(id)?{opportunities:[],opportunityOmission:'合成材料不支持生成真实产品机会。'}:{}),
     ...(data.visualSectionIds?.includes(id) ? { visual: { title: '合成测试机制图', caption: '仅描述合成材料中的规划与执行关系，不代表真实研究成果。', kind: 'paper-fact', evidenceIds: [data.evidence[0].facts[0].id], nodes: [{id:'plan',label:'规划'},{id:'execute',label:'执行'}], edges:[{from:'plan',to:'execute',label:'任务'}] } } : {}),
     findings: [{ statement: '该合成测试材料描述了规划与执行分离，这是一条用于验证管线的测试事实。', kind: 'paper-fact', evidenceIds: [data.evidence[0].facts[0].id], confidence: 'low', implication: '验证分析结构，不构成研究结论。', validation: '仅用于自动测试，应以真实论文和真实模型另行验证。' }],
   })) });

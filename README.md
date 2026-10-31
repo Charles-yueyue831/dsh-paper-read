@@ -7,7 +7,7 @@ DeepSeek Harness 的 Cordis 研究插件。将公开论文检索、证据提取�
 需要 Node.js ≥ 22.12 和 DeepSeek Harness `>=0.2.1-alpha.2 <0.3.0`。已验证的宿主及测试范围见 [验收记录](docs/acceptance-v0.2.0.md)。
 
 ```bash
-dsh plugin --profile web add dsh-paper-insight@0.2.3
+dsh plugin --profile web add dsh-paper-insight@0.2.4
 dsh web
 ```
 
@@ -21,13 +21,25 @@ dsh web
 Web 工作台目前支持本机 `localhost/127.0.0.1/::1` 的 Web Harness，不提供远程公开 HTTP 服务或 Electron IPC 适配。未打开任何会话时会提示先打开会话。工具本身可在 headless 使用：
 
 ```bash
-dsh plugin --profile headless add dsh-paper-insight@0.2.3
+dsh plugin --profile headless add dsh-paper-insight@0.2.4
 dsh headless "检索 ReAct 论文，执行十模块分析并保存本地；然后只重做沙箱模块，比较两个版本。"
 ```
 
 Web、headless 是不同 profile，分别安装并配置模型。模型凭据由 Harness 管理，不需给插件另配模型 API Key。
 
-## 图文研究报告（0.2.3）
+## 章节覆盖、结论复核与产品草稿（0.2.4）
+
+- 选择快速阅读、深度研究、产品研究预设后，仍可勾选具体模块。默认最多 64 次模型调用，包括失败、格式修复与证据复核。
+- 报告显示每章可用、选中和成功处理的文本片段；优先选择方法、实验、结果等内容。未识别的标题明确列为未知，文本覆盖不代表理解准确率。
+- 勾选未完成章节后点击“补充阅读所选章节”。复用原文与哈希匹配的证据，生成新报告版本，旧文件保留。
+- 高风险事实结论会核查对象、数据集、基线、指标和适用条件，并标为“有直接依据 / 需人工核查 / 证据不足”。自动复核不是独立实验验证，推断和产品设想不会升级为事实。
+- 可以记录自己的复核状态、备注与产品机会优先级，单独保存修订记录，不改变模型原报告。PRD / PoC 草稿从已保存的机会卡片导出，不调用模型。
+- 预算用完时保留进度；提高**累计总预算**后点“按当前预算继续”。重新分析选中内容开始新的预算，继续或补充阅读沿用累计调用账本。
+- Token 与费用未返回时明确显示未知。当前核验的 Harness 路由没有可靠的调用前输入计数接口：填写总 Token 硬上限会在调用前拒绝并提示清空上限。调用次数上限始终可用，不用字符估算冒充精确 Token 控制。
+
+新报告 schemaVersion 为 3，promptVersion 为 0.2.4；旧报告继续可读。新增 `reviews.json`、`opportunities.json`、`usage.json`、`annotations.json`（人工编辑后）、`prd-draft.md`、`poc-draft.md`。字段及调用示例见 [v0.2.4 API](docs/api-v0.2.4.md)。
+
+## 图文研究报告（0.2.3 引入）
 
 - 独立宽幅阅读区；按“先看重点、理解技术、研究依据、产品应用、验证行动、证据与资料”导航，章节标题使用自然中文。
 - 新报告首先展示核心思想、主要价值、适用边界与行动建议。机制图在相关章节直接显示，详细解析和证据附录默认收起；可“展开全部细节”或“只看重点”。点击证据编号会自动展开并定位原文。

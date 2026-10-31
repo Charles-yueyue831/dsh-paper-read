@@ -384,9 +384,100 @@
     };
   }
 
+  // client/research-controls.js
+  var chapterLabels = { abstract: "\u6458\u8981", introduction: "\u5F15\u8A00", "related-work": "\u76F8\u5173\u5DE5\u4F5C", methods: "\u65B9\u6CD5", experiments: "\u5B9E\u9A8C", results: "\u7ED3\u679C", limitations: "\u5C40\u9650", conclusion: "\u7ED3\u8BBA", references: "\u53C2\u8003\u6587\u732E", unknown: "\u672A\u8BC6\u522B\u7AE0\u8282" };
+  var reviewLabels = { direct: "\u6709\u76F4\u63A5\u4F9D\u636E", manual: "\u9700\u4EBA\u5DE5\u6838\u67E5", insufficient: "\u8BC1\u636E\u4E0D\u8DB3" };
+  var opportunityFields = { users: "\u76EE\u6807\u7528\u6237", scenario: "\u4F7F\u7528\u573A\u666F", painPoint: "\u95EE\u9898", mechanism: "\u673A\u5236", technicalCapability: "\u6280\u672F\u80FD\u529B", productCapability: "\u4EA7\u54C1\u80FD\u529B", feature: "\u529F\u80FD", hypothesis: "\u5047\u8BBE", value: "\u4EF7\u503C", feasibility: "\u53EF\u884C\u6027", cost: "\u6210\u672C", risks: "\u98CE\u9669", metrics: "\u6307\u6807", dependencies: "\u4F9D\u8D56", journey: "\u7528\u6237\u6D41\u7A0B", acceptance: "\u9A8C\u6536\u6807\u51C6", steps: "\u5B9E\u9A8C\u6B65\u9AA4", stopConditions: "\u505C\u6B62\u6761\u4EF6" };
+  function createResearchControls(React) {
+    const h = React.createElement;
+    return function ResearchControls({ bundle, run, busy }) {
+      const [chapters, setChapters] = React.useState([]), [editing, setEditing] = React.useState(null);
+      React.useEffect(() => {
+        setChapters([]);
+        setEditing(null);
+      }, [bundle?.runId, bundle?.annotations?.revision]);
+      if (!Array.isArray(bundle?.reportData?.sections)) return null;
+      const r = bundle.reportData, args = { key: bundle.key, runId: bundle.runId }, a = bundle.annotations || { revision: 0, entries: [] };
+      const button = (text, fn) => h("button", { type: "button", disabled: busy, onClick: fn }, text);
+      const edit = (type, id) => {
+        const prior = a.entries.find((e) => e.type === type && e.targetId === id);
+        setEditing({ type, targetId: id, notes: prior?.notes || "", ...type === "finding" ? { status: prior?.status || "pending" } : { priority: prior?.priority || "medium" } });
+      };
+      return h(
+        "section",
+        { "aria-label": "\u7814\u7A76\u8986\u76D6\u4E0E\u590D\u6838", className: "pi-note" },
+        h("h3", null, "\u6750\u6599\u8986\u76D6\u4E0E\u7814\u7A76\u7528\u91CF"),
+        r.selection?.chapters ? h(
+          React.Fragment,
+          null,
+          h("p", null, `\u5DF2\u5904\u7406 ${r.selection.processedChunks}/${r.selection.totalChunks} \u4E2A\u7247\u6BB5\u3002\u6587\u672C\u8986\u76D6\u4E0D\u4EE3\u8868\u7406\u89E3\u51C6\u786E\u7387\u3002`),
+          ...r.selection.chapters.filter((c) => c.total).map((c) => h(
+            "label",
+            { key: c.id },
+            c.processed < c.total ? h("input", { type: "checkbox", disabled: busy, checked: chapters.includes(c.id), onChange: (e) => setChapters(e.target.checked ? [...chapters, c.id] : chapters.filter((x) => x !== c.id)) }) : null,
+            `${chapterLabels[c.id]}\uFF1A${c.processed}/${c.total} `,
+            h("progress", { max: c.total, value: c.processed, "aria-label": chapterLabels[c.id] })
+          )),
+          chapters.length ? button("\u8865\u5145\u9605\u8BFB\u6240\u9009\u7AE0\u8282", () => run("analyze", { ...args, supplementChapters: chapters, modules: r.requestedModules })) : null
+        ) : h("p", null, "\u6B64\u7248\u672C\u672A\u8BB0\u5F55\u7AE0\u8282\u5904\u7406\u8986\u76D6\u3002"),
+        r.usage ? h(
+          React.Fragment,
+          null,
+          h("p", null, `\u7D2F\u8BA1 ${r.usage.calls} \u6B21\u8C03\u7528 \xB7 \u5DF2\u77E5 ${r.usage.knownTokens} Token \xB7 ${r.usage.unknownUsageCalls} \u6B21\u7528\u91CF\u672A\u77E5 \xB7 \u8D39\u7528\u672A\u77E5`),
+          ...Object.entries(r.usage.stages).map(([id, s]) => h("p", { key: id }, `${{ extraction: "\u8BC1\u636E\u63D0\u53D6", generation: "\u62A5\u544A\u64B0\u5199", repair: "\u683C\u5F0F\u4FEE\u590D", review: "\u8BC1\u636E\u590D\u6838" }[id] || "\u5176\u4ED6"}\uFF1A${s.calls} \u6B21\uFF0C${(s.durationMs / 1e3).toFixed(1)} \u79D2`))
+        ) : null,
+        h(
+          "details",
+          null,
+          h("summary", null, "\u68C0\u67E5\u7ED3\u8BBA\u4F9D\u636E\u4E0E\u4EBA\u5DE5\u590D\u6838"),
+          h("p", null, "\u81EA\u52A8\u5BA1\u67E5\u4EC5\u8F85\u52A9\u53D1\u73B0\u8BC1\u636E\u7F3A\u53E3\uFF1B\u4EBA\u5DE5\u786E\u8BA4\u4E0D\u6539\u53D8\u6A21\u578B\u539F\u59CB\u5206\u7C7B\u3002"),
+          ...r.sections.flatMap((s) => s.findings.filter((f) => f.id).map((f) => h(
+            "article",
+            { key: f.id, className: "pi-result" },
+            h("p", null, f.statement),
+            h("p", null, `${reviewLabels[f.review?.status] || "\u672A\u5BA1\u67E5"}\uFF1A${f.review?.reason || "\u672A\u8BB0\u5F55"}`),
+            h("p", null, `\u6765\u6E90\uFF1A${f.evidenceIds.join("\u3001") || "\u65E0\u76F4\u63A5\u4F9D\u636E"}`),
+            ...a.entries.filter((e) => e.type === "finding" && e.targetId === f.id).map((e) => h("p", { key: e.targetId }, `\u6211\u7684\u590D\u6838\uFF1A${{ confirmed: "\u5DF2\u786E\u8BA4", questioned: "\u6709\u7591\u95EE", pending: "\u5F85\u6838\u67E5" }[e.status]} \xB7 ${e.notes}`)),
+            button("\u8BB0\u5F55\u6211\u7684\u590D\u6838", () => edit("finding", f.id))
+          )))
+        ),
+        h(
+          "details",
+          null,
+          h("summary", null, `\u4EA7\u54C1\u673A\u4F1A\uFF08${r.opportunities?.length || 0}\uFF09`),
+          !r.opportunities?.length ? h("p", null, "\u6CA1\u6709\u7ED3\u6784\u5316\u673A\u4F1A\uFF0C\u8BF7\u67E5\u770B\u62A5\u544A\u4E2D\u7684\u9002\u7528\u6027\u548C\u8BC1\u636E\u4E0D\u8DB3\u8BF4\u660E\u3002") : null,
+          ...(r.opportunities || []).map((c) => h(
+            "article",
+            { key: c.id, className: "pi-result" },
+            h("h4", null, c.name),
+            h("p", null, `${c.status === "not-recommended" ? "\u4E0D\u5EFA\u8BAE\u91C7\u7528" : "\u5F85\u9A8C\u8BC1\u65B9\u6848"} \xB7 \u4F9D\u636E\uFF1A${c.evidenceIds.join("\u3001") || "\u7F3A\u5C11\u76F4\u63A5\u8BC1\u636E\uFF0C\u4EC5\u4E3A\u5047\u8BBE"}`),
+            h("p", null, `\u4F18\u5148\u7EA7\uFF1A${{ high: "\u9AD8", medium: "\u4E2D", low: "\u4F4E" }[a.entries.find((e) => e.type === "opportunity" && e.targetId === c.id)?.priority || c.priority]}\uFF08\u53EF\u7531\u4F60\u8C03\u6574\uFF09`),
+            h("details", null, h("summary", null, "\u67E5\u770B\u80FD\u529B\u3001\u9700\u6C42\u4E0E\u9A8C\u8BC1\u8BA1\u5212"), ...Object.entries(opportunityFields).filter(([k]) => k !== "name").map(([k, label]) => h("p", { key: k }, h("strong", null, label + "\uFF1A"), c[k]))),
+            h("div", { className: "pi-actions" }, button("\u8C03\u6574\u4F18\u5148\u7EA7", () => edit("opportunity", c.id)), button("\u4E0B\u8F7D PRD \u8349\u7A3F", () => run("export_report", { ...args, format: "prd", cardId: c.id })), button("\u4E0B\u8F7D PoC \u8349\u7A3F", () => run("export_report", { ...args, format: "poc", cardId: c.id })))
+          ))
+        ),
+        editing ? h(
+          "form",
+          { "aria-label": "\u4FDD\u5B58\u4EBA\u5DE5\u610F\u89C1", onSubmit: (e) => {
+            e.preventDefault();
+            run("annotate", { ...args, ...editing, reportHash: bundle.reportHash, revision: a.revision });
+          } },
+          h("label", null, editing.type === "finding" ? "\u590D\u6838\u72B6\u6001" : "\u6211\u7684\u4F18\u5148\u7EA7", h(
+            "select",
+            { value: editing.status || editing.priority, onChange: (e) => setEditing({ ...editing, [editing.type === "finding" ? "status" : "priority"]: e.target.value }) },
+            ...Object.entries(editing.type === "finding" ? { pending: "\u5F85\u6838\u67E5", confirmed: "\u5DF2\u786E\u8BA4", questioned: "\u6709\u7591\u95EE" } : { high: "\u9AD8", medium: "\u4E2D", low: "\u4F4E" }).map(([v, l]) => h("option", { key: v, value: v }, l))
+          )),
+          h("label", null, "\u6211\u7684\u5907\u6CE8", h("textarea", { value: editing.notes, maxLength: 5e3, onChange: (e) => setEditing({ ...editing, notes: e.target.value }) })),
+          h("button", { type: "submit", disabled: busy }, "\u4FDD\u5B58\u610F\u89C1"),
+          button("\u53D6\u6D88", () => setEditing(null))
+        ) : null
+      );
+    };
+  }
+
   // client/history-view.js
-  var statusLabels = { completed: "\u5DF2\u5B8C\u6210", failed: "\u5206\u6790\u672A\u5B8C\u6210", cancelled: "\u5DF2\u53D6\u6D88", running: "\u6B63\u5728\u5206\u6790", fetched: "\u5DF2\u53D6\u5F97\u8BBA\u6587" };
-  var stageLabels = { starting: "\u51C6\u5907\u4EFB\u52A1", fetch: "\u83B7\u53D6\u8BBA\u6587", research: "\u68C0\u7D22\u76F8\u5173\u7814\u7A76", analysis: "\u5206\u6790\u8BBA\u6587", evidence: "\u9605\u8BFB\u5E76\u63D0\u53D6\u4F9D\u636E", synthesis: "\u64B0\u5199\u62A5\u544A", save: "\u4FDD\u5B58\u62A5\u544A" };
+  var statusLabels = { completed: "\u5DF2\u5B8C\u6210", failed: "\u5206\u6790\u672A\u5B8C\u6210", cancelled: "\u5DF2\u53D6\u6D88", running: "\u6B63\u5728\u5206\u6790", fetched: "\u5DF2\u53D6\u5F97\u8BBA\u6587", "budget-paused": "\u9884\u7B97\u6682\u505C" };
+  var stageLabels = { starting: "\u51C6\u5907\u4EFB\u52A1", fetch: "\u83B7\u53D6\u8BBA\u6587", research: "\u68C0\u7D22\u76F8\u5173\u7814\u7A76", analysis: "\u5206\u6790\u8BBA\u6587", evidence: "\u9605\u8BFB\u5E76\u63D0\u53D6\u4F9D\u636E", extraction: "\u63D0\u53D6\u8BC1\u636E", generation: "\u64B0\u5199\u62A5\u544A", review: "\u6838\u67E5\u8BC1\u636E", repair: "\u4FEE\u590D\u683C\u5F0F", synthesis: "\u64B0\u5199\u62A5\u544A", save: "\u4FDD\u5B58\u62A5\u544A" };
   function explainFailure(message = "") {
     if (/标题请先搜索/.test(message)) return "\u5148\u524D\u7248\u672C\u672A\u80FD\u8BC6\u522B\u8BBA\u6587\u6807\u9898\u3002\u73B0\u5728\u53EF\u4EE5\u91CD\u65B0\u5C1D\u8BD5\u5206\u6790\uFF0C\u7CFB\u7EDF\u4F1A\u5148\u68C0\u7D22\u8FD9\u7BC7\u8BBA\u6587\u3002";
     if (/max-tokens|MODEL_OUTPUT_TRUNCATED/.test(message)) return "\u6A21\u578B\u8F93\u51FA\u8FC7\u957F\uFF0C\u672C\u6B21\u5206\u6790\u672A\u5B8C\u6210\u3002\u53EF\u51CF\u5C11\u9009\u4E2D\u7684\u5206\u6790\u5185\u5BB9\u540E\u91CD\u8BD5\u3002";
@@ -433,7 +524,7 @@
               React.Fragment,
               null,
               r.status === "completed" && r.type !== "discovery" ? action("\u67E5\u770B\u62A5\u544A", () => run("report", args(r))) : null,
-              r.canResume ? action(r.hasDocument ? "\u7EE7\u7EED\u5B8C\u6210\u5206\u6790" : "\u91CD\u65B0\u5C1D\u8BD5\u5206\u6790", () => run("resume", args(r))) : null,
+              r.canResume ? action(r.status === "budget-paused" ? "\u6309\u5F53\u524D\u9884\u7B97\u7EE7\u7EED" : r.hasDocument ? "\u7EE7\u7EED\u5B8C\u6210\u5206\u6790" : "\u91CD\u65B0\u5C1D\u8BD5\u5206\u6790", () => run("resume", args(r))) : null,
               r.canReanalyze ? action("\u91CD\u65B0\u5206\u6790\u9009\u4E2D\u5185\u5BB9", () => run("analyze", { ...args(r), modules })) : null,
               !r.type && !r.hasDocument && r.status !== "running" ? action("\u4FEE\u6539\u8BBA\u6587\u4FE1\u606F", () => onRepair(r.input || {})) : null,
               action("\u7F16\u8F91\u8BB0\u5F55", () => setEditing({ ...args(r), title: r.displayTitle || "", notes: r.record?.notes || "", revision: r.record?.revision || 0 })),
@@ -484,6 +575,7 @@
       const h = React.createElement;
       const { MarkdownText } = require2("@deepseek-ai/dsh-client-ui-primitives");
       const ReportView = createReportView(React, MarkdownText);
+      const ResearchControls = createResearchControls(React);
       const HistoryView = createHistoryView(React);
       const { useState, useEffect, useRef } = React;
       const labels = {
@@ -514,7 +606,7 @@
       }
       function Workbench() {
         const reportAnchor = useRef(null);
-        const [sessions, setSessions] = useState([]), [session, setSession] = useState(""), [query, setQuery] = useState(""), [reference, setReference] = useState(""), [local, setLocal] = useState(false), [modules, setModules] = useState(Object.keys(labels)), [papers, setPapers] = useState([]), [runs, setRuns] = useState([]), [selected, setSelected] = useState([]), [historyQuery, setHistoryQuery] = useState(""), [historyStatus, setHistoryStatus] = useState(""), [deleted, setDeleted] = useState(false), [offset, setOffset] = useState(0), [total, setTotal] = useState(0), [detail, setDetail] = useState(null), [submitting, setSubmitting] = useState(false), [report, setReport] = useState(""), [status, setStatus] = useState("\u9009\u62E9\u4F1A\u8BDD\u4EE5\u4F7F\u7528\u5BF9\u5E94\u5DE5\u4F5C\u533A\u4E0E\u6A21\u578B\u3002"), [error, setError] = useState(""), [job, setJob] = useState(null), [topics, setTopics] = useState(""), [advanced, setAdvanced] = useState({
+        const [sessions, setSessions] = useState([]), [session, setSession] = useState(""), [query, setQuery] = useState(""), [reference, setReference] = useState(""), [local, setLocal] = useState(false), [modules, setModules] = useState(Object.keys(labels)), [papers, setPapers] = useState([]), [runs, setRuns] = useState([]), [selected, setSelected] = useState([]), [historyQuery, setHistoryQuery] = useState(""), [historyStatus, setHistoryStatus] = useState(""), [deleted, setDeleted] = useState(false), [offset, setOffset] = useState(0), [total, setTotal] = useState(0), [detail, setDetail] = useState(null), [submitting, setSubmitting] = useState(false), [report, setReport] = useState(""), [bundle, setBundle] = useState(null), [mode, setMode] = useState(""), [maxCalls, setMaxCalls] = useState("64"), [maxTotalTokens, setMaxTotalTokens] = useState(""), [status, setStatus] = useState("\u9009\u62E9\u4F1A\u8BDD\u4EE5\u4F7F\u7528\u5BF9\u5E94\u5DE5\u4F5C\u533A\u4E0E\u6A21\u578B\u3002"), [error, setError] = useState(""), [job, setJob] = useState(null), [topics, setTopics] = useState(""), [advanced, setAdvanced] = useState({
           author: "",
           venue: "",
           institution: "",
@@ -549,6 +641,7 @@
           setRuns([]);
           setSelected([]);
           setReport("");
+          setBundle(null);
           setDetail(null);
           setPapers([]);
           setOffset(0);
@@ -563,7 +656,7 @@
               const value = await api("/jobs?id=" + encodeURIComponent(job.id));
               if (stopped) return;
               setStatus(
-                value.status === "running" ? `\u6B63\u5728\u5904\u7406\uFF1A${stageLabels[value.progress?.stage] || "\u5206\u6790\u4E2D"} ${value.progress?.completed || ""}${value.progress?.total ? "/" + value.progress.total : ""}` : value.status === "completed" ? "\u5DF2\u5B8C\u6210\uFF0C\u7ED3\u679C\u5DF2\u8FD4\u56DE\u3002" : statusLabels[value.status] || "\u4EFB\u52A1\u672A\u5B8C\u6210"
+                value.status === "running" ? `\u6B63\u5728\u5904\u7406\uFF1A${stageLabels[value.progress?.stage] || "\u5206\u6790\u4E2D"} ${value.progress?.completed || ""}${value.progress?.total ? "/" + value.progress.total : ""}${value.progress?.usage ? ` \xB7 \u5DF2\u8C03\u7528 ${value.progress.usage.calls}/${value.progress.budget.maxCalls} \u6B21 \xB7 \u5DF2\u77E5 ${value.progress.usage.knownTokens} Token\uFF0C${value.progress.usage.unknownUsageCalls} \u6B21\u7528\u91CF\u672A\u77E5` : ""}` : value.status === "completed" ? "\u5DF2\u5B8C\u6210\uFF0C\u7ED3\u679C\u5DF2\u8FD4\u56DE\u3002" : statusLabels[value.status] || "\u4EFB\u52A1\u672A\u5B8C\u6210"
               );
               if (value.status === "running") {
                 timer = setTimeout(poll, 1200);
@@ -602,7 +695,17 @@
                 setPapers(r.newPapers);
                 setStatus(`\u53D1\u73B0 ${r.newPapers.length} \u7BC7\u65B0\u589E\u6216\u66F4\u65B0\u8BBA\u6587\u3002`);
               } else if (r.markdown) {
-                setReport(r.markdown);
+                if (job.action === "export_report") {
+                  const url = URL.createObjectURL(new Blob([r.markdown], { type: "text/markdown;charset=utf-8" }));
+                  const a = document.createElement("a");
+                  a.href = url;
+                  a.download = r.filename || "research-draft.md";
+                  a.click();
+                  setTimeout(() => URL.revokeObjectURL(url), 1e3);
+                } else {
+                  setReport(r.markdown);
+                  setBundle(r);
+                }
                 if (job.reloadHistory) {
                   await queueHistory();
                   return;
@@ -649,6 +752,14 @@
         const run = async (action, args = {}) => {
           if (submitLock.current) return;
           setError("");
+          if (["analyze", "resume"].includes(action)) {
+            const calls = Number(maxCalls), tokens = maxTotalTokens ? Number(maxTotalTokens) : null;
+            if (!Number.isInteger(calls) || calls < 1 || calls > 1e3 || tokens !== null && (!Number.isInteger(tokens) || tokens < 1 || tokens > 1e7)) {
+              setError("\u8BF7\u8F93\u5165\u6709\u6548\u9884\u7B97\uFF1A\u8C03\u7528\u6B21\u6570 1\u20131000\uFF0CToken \u4E3A\u6B63\u6574\u6570\u6216\u7559\u7A7A\u3002");
+              return;
+            }
+            args = { ...args, maxCalls: calls, maxTotalTokens: tokens, ...mode && !args.modules ? { mode } : {} };
+          }
           if (action === "analyze" && !modules.length) {
             setError("\u8BF7\u81F3\u5C11\u9009\u62E9\u4E00\u9879\u5206\u6790\u5185\u5BB9\u3002");
             return;
@@ -812,6 +923,13 @@
                 "section",
                 { className: "pi-card" },
                 h("h2", null, "\u5206\u6790\u8BBA\u6587"),
+                h("label", null, "\u7814\u7A76\u6A21\u5F0F", h("select", { value: mode, onChange: (e) => {
+                  const v = e.target.value;
+                  setMode(v);
+                  if (v) setModules({ quick: ["paper", "beginner"], deep: ["paper", "first-principles", "landscape", "decision"], product: ["paper", "sandbox", "features", "products", "experience", "decision"] }[v]);
+                } }, h("option", { value: "" }, "\u81EA\u9009\u5185\u5BB9"), h("option", { value: "quick" }, "\u5FEB\u901F\u9605\u8BFB"), h("option", { value: "deep" }, "\u6DF1\u5EA6\u7814\u7A76"), h("option", { value: "product" }, "\u4EA7\u54C1\u7814\u7A76"))),
+                input("\u6700\u591A\u6A21\u578B\u8C03\u7528\u6B21\u6570\uFF08\u7EE7\u7EED\u7814\u7A76\u65F6\u542B\u6B64\u524D\u8C03\u7528\uFF09", maxCalls, setMaxCalls, "number"),
+                h("details", null, h("summary", null, "Token \u9884\u7B97\u4E0E\u7528\u91CF\u8BF4\u660E"), input("\u603B Token \u786C\u9650\u5236\uFF08\u53EF\u7559\u7A7A\uFF09", maxTotalTokens, setMaxTotalTokens, "number"), h("p", null, "\u4E0D\u652F\u6301\u53EF\u4FE1\u8BA1\u6570\u7684\u6A21\u578B\u4F1A\u5728\u8C03\u7528\u524D\u6682\u505C\uFF1B\u53EF\u7559\u7A7A\u5E76\u4F7F\u7528\u8C03\u7528\u6B21\u6570\u9650\u5236\u3002\u5B9E\u9645\u7528\u91CF\u6216\u8D39\u7528\u672A\u77E5\u65F6\u4F1A\u660E\u786E\u6807\u6CE8\u3002")),
                 h(
                   "label",
                   null,
@@ -979,6 +1097,7 @@
               "section",
               { className: "pi-card pi-report-card", ref: reportAnchor },
               h("h2", null, "\u7814\u7A76\u62A5\u544A"),
+              report ? h(ResearchControls, { bundle, run, busy }) : null,
               report ? h(ReportView, {
                 text: report,
                 onDownload: () => {
