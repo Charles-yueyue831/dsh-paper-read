@@ -1,10 +1,10 @@
 {
-  "version": "0.2.5",
+  "version": "0.2.6",
+  "checkedAt": "2026-11-02",
   "passed": false,
   "status": "release-authorized-with-live-model-limitation",
-  "checkedAt": "2026-10-31",
-  "tests": 89,
-  "testsPassed": 89,
+  "tests": 94,
+  "testsPassed": 94,
   "hostSmoke": {
     "passed": true,
     "tools": 28,
@@ -14,22 +14,14 @@
   },
   "browser": {
     "nativeHost": true,
-    "fourViews": true,
-    "evidenceAnnotationsPersisted": true,
-    "escapeFocusRestored": true,
-    "containerWidths": [
-      1280,
-      1050,
-      800,
-      390
-    ],
-    "horizontalOverflow": false,
-    "publicSearch": true
+    "publicSearch": true,
+    "refreshReconnect": true,
+    "configurationPresets": true,
+    "truthfulFailureStatus": true
   },
   "liveModel": {
     "passed": false,
-    "paper": "arxiv:2210.03629",
-    "error": "QUOTA / HTTP 402"
+    "status": "not-rerun"
   },
   "releaseAuthorized": true
 }

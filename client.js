@@ -58,6 +58,24 @@
     for (const kind of ["references", "citations", "discovery"]) for (const p of report.research?.[kind] || []) if (ids.includes(p.evidenceId)) found.push({ id: p.evidenceId, text: p.abstract || "\u4EC5\u6709\u51FA\u7248\u5143\u6570\u636E\uFF0C\u4E0D\u80FD\u636E\u6B64\u9A8C\u8BC1\u6280\u672F\u6548\u679C\u3002", locator: p.title, url: p.url });
     return found;
   }
+  function researchCompatibility(tools) {
+    if (!Array.isArray(tools)) return "\u6B63\u5728\u68C0\u67E5\u7814\u7A76\u670D\u52A1\uFF0C\u8BF7\u7A0D\u5019\u6216\u5237\u65B0\u4F1A\u8BDD\u3002";
+    for (const action of ["analyze", "resume"]) {
+      const fields2 = tools.find((t) => t.name === "paper_insight_" + action)?.parameters?.properties;
+      if (!fields2?.maxCalls || !fields2?.maxTotalTokens) return "\u7814\u7A76\u754C\u9762\u5DF2\u66F4\u65B0\uFF0C\u4F46\u540E\u53F0\u670D\u52A1\u4ECD\u662F\u65E7\u7248\u3002\u8BF7\u5B8C\u5168\u9000\u51FA\u5E76\u91CD\u65B0\u6253\u5F00 DeepSeek Harness\uFF1B\u7F51\u9875\u7AEF\u9700\u91CD\u542F\u5BF9\u5E94\u670D\u52A1\uFF0C\u7136\u540E\u5237\u65B0\u9875\u9762\u3002";
+    }
+    return "";
+  }
+  function failureStatus(error, status) {
+    const saved = Boolean(error?.key && error?.runId);
+    if (status === "cancelled") return saved ? "\u7814\u7A76\u5DF2\u53D6\u6D88\uFF0C\u5DF2\u5B8C\u6210\u7684\u5185\u5BB9\u5DF2\u4FDD\u5B58\uFF0C\u53EF\u4ECE\u7814\u7A76\u5386\u53F2\u7EE7\u7EED\u3002" : "\u64CD\u4F5C\u5DF2\u53D6\u6D88\uFF0C\u672A\u751F\u6210\u53EF\u6062\u590D\u7684\u7814\u7A76\u8BB0\u5F55\u3002";
+    if (status === "budget-paused") return saved ? "\u7814\u7A76\u5DF2\u6682\u505C\uFF1A\u9884\u7B97\u5DF2\u7528\u5B8C\uFF0C\u5DF2\u5B8C\u6210\u5185\u5BB9\u5DF2\u4FDD\u5B58\u3002\u8BF7\u5728\u7814\u7A76\u5386\u53F2\u4E2D\u8C03\u6574\u9884\u7B97\u5E76\u7EE7\u7EED\u3002" : "\u64CD\u4F5C\u56E0\u9884\u7B97\u9650\u5236\u6682\u505C\uFF0C\u672A\u751F\u6210\u53EF\u6062\u590D\u7684\u7814\u7A76\u8BB0\u5F55\u3002";
+    return saved ? "\u7814\u7A76\u672A\u5B8C\u6210\uFF0C\u5DF2\u5B8C\u6210\u7684\u5185\u5BB9\u5DF2\u4FDD\u5B58\uFF0C\u53EF\u4ECE\u7814\u7A76\u5386\u53F2\u7EE7\u7EED\u3002" : "\u64CD\u4F5C\u672A\u5B8C\u6210\uFF0C\u5C1A\u672A\u751F\u6210\u53EF\u6062\u590D\u7684\u7814\u7A76\u8BB0\u5F55\u3002";
+  }
+  function recoverJob(jobs, sessions, session) {
+    const valid = (jobs || []).filter((j) => j.status === "running" && typeof j.id === "string" && typeof j.action === "string" && sessions.some((s) => s.id === j.sessionId));
+    return valid.find((j) => j.sessionId === session) || (!session ? valid[0] : null) || null;
+  }
 
   // client/workbench-style.js
   var workbenchStyle = `
@@ -702,6 +720,8 @@
           return () => clearInterval(timer);
         }, [job?.id]);
         const submitLock = useRef(false);
+        const [serverTools, setServerTools] = useState(null);
+        const compatibility = researchCompatibility(serverTools);
         const referenceInput = useRef(null);
         const busy = !!job || submitting;
         const historyArgs = (page = offset) => ({ query: historyQuery, deleted, ...historyStatus ? { status: historyStatus } : {}, offset: page, limit: 20 });
@@ -718,6 +738,15 @@
         };
         const refresh = () => api("/sessions").then((v) => {
           setSessions(v.sessions);
+          setServerTools(v.modules);
+          const restored = !submitLock.current && recoverJob(v.activeJobs, v.sessions, session);
+          if (restored) {
+            submitLock.current = true;
+            setSession(restored.sessionId);
+            setJob(restored);
+            setStatus("\u5DF2\u91CD\u65B0\u8FDE\u63A5\u6B63\u5728\u8FD0\u884C\u7684\u4EFB\u52A1\u3002");
+            return;
+          }
           setSession(
             (old) => v.sessions.some((s) => s.id === old) ? old : v.sessions[0]?.id || ""
           );
@@ -745,6 +774,8 @@
           setDetail(null);
           setPapers([]);
           setOffset(0);
+          setTotal(0);
+          setStatus("\u5DF2\u5207\u6362\u7814\u7A76\u4F1A\u8BDD\u3002");
           if (session) run("library", { offset: 0, limit: 20, deleted: false });
         }, [session]);
         useEffect(() => {
@@ -769,7 +800,7 @@
                 if (!stopped) setJob({ id: next.id, action: "library", sessionId: job.sessionId, background: true });
               };
               if (value.error) {
-                setStatus("\u7814\u7A76\u672A\u5B8C\u6210\uFF0C\u5DF2\u4FDD\u7559\u53EF\u6062\u590D\u7684\u5185\u5BB9\u3002");
+                setStatus(failureStatus(value.error, value.status));
                 setError(explainFailure(value.error.message));
                 if (value.error.candidates) setPapers(value.error.candidates);
                 if (value.error.key) await queueHistory();
@@ -808,6 +839,7 @@
                 } else {
                   setReport(r.markdown);
                   setBundle(r);
+                  setView("report");
                 }
                 if (job.reloadHistory) {
                   await queueHistory();
@@ -853,6 +885,10 @@
           if (submitLock.current) return;
           setError("");
           if (["analyze", "resume"].includes(action)) {
+            if (compatibility) {
+              setError(compatibility);
+              return;
+            }
             const calls = Number(maxCalls), tokens = maxTotalTokens ? Number(maxTotalTokens) : null;
             if (!Number.isInteger(calls) || calls < 1 || calls > 1e3 || tokens !== null && (!Number.isInteger(tokens) || tokens < 1 || tokens > 1e7)) {
               setError("\u8BF7\u8F93\u5165\u6709\u6548\u9884\u7B97\uFF1A\u8C03\u7528\u6B21\u6570 1\u20131000\uFF0CToken \u4E3A\u6B63\u6574\u6570\u6216\u7559\u7A7A\u3002");
@@ -915,7 +951,7 @@
             modules
           });
         };
-        const issue = precheck({ session, reference, modules, maxCalls, busy });
+        const issue = compatibility || precheck({ session, reference, modules, maxCalls, busy });
         const selectPaper = (p) => {
           setLocal(false);
           setReference(p.id || p.url || p.title);
@@ -981,6 +1017,7 @@
               report ? h("button", { onClick: () => setView("report") }, "\u67E5\u770B\u62A5\u544A") : null
             )
           ),
+          compatibility ? h("p", { role: "status", className: "pi-note" }, compatibility) : null,
           error ? h("p", { role: "alert", className: "pi-error" }, error) : null,
           panel("discover", h(
             "div",
@@ -1039,7 +1076,7 @@
               input(local ? "PDF / \u6587\u672C\u76F8\u5BF9\u8DEF\u5F84" : "\u8BBA\u6587\u6807\u9898 / \u94FE\u63A5 / DOI / arXiv \u7F16\u53F7", reference, setReference),
               h("p", { className: "pi-small" }, local ? "\u6587\u4EF6\u5E94\u5DF2\u5728\u6240\u9009\u5DE5\u4F5C\u533A\u5185\uFF0C\u6B64\u5904\u4E0D\u4F1A\u4E0A\u4F20\u6587\u4EF6\u3002" : "\u6807\u9898\u4F1A\u5148\u68C0\u7D22\u5339\u914D\uFF1B\u9047\u5230\u591A\u4E2A\u5019\u9009\u65F6\u9700\u9009\u62E9\u8BBA\u6587\u3002"),
               h("fieldset", null, h("legend", null, "\u7814\u7A76\u5185\u5BB9"), ...Object.entries({ "\u7406\u89E3\u8BBA\u6587": ["paper", "first-principles", "beginner"], "\u7814\u7A76\u4E0E\u8FC1\u79FB": ["landscape", "transfer", "sandbox"], "\u4EA7\u54C1\u4E0E\u884C\u52A8": ["features", "products", "experience", "decision"] }).map(([group, ids]) => h("div", { key: group }, h("h3", null, group), ...ids.map((id) => h("label", { key: id }, h("input", { type: "checkbox", checked: modules.includes(id), onChange: (e) => setCustom(e.target.checked ? [...modules, id] : modules.filter((m) => m !== id)) }), labels[id])))), h("div", { className: "pi-actions" }, button("\u5168\u9009", () => setCustom(Object.keys(labels))), button("\u6E05\u7A7A", () => setCustom([])))),
-              input("\u6700\u591A\u6A21\u578B\u8C03\u7528\u6B21\u6570", maxCalls, setMaxCalls, "number"),
+              !compatibility ? input("\u6700\u591A\u6A21\u578B\u8C03\u7528\u6B21\u6570", maxCalls, setMaxCalls, "number") : h("p", null, "\u7814\u7A76\u670D\u52A1\u5C31\u7EEA\u540E\u53EF\u8BBE\u7F6E\u8C03\u7528\u9884\u7B97\u3002"),
               h("p", { className: "pi-small" }, "\u7EE7\u7EED\u6216\u8865\u5145\u7814\u7A76\u65F6\u5305\u542B\u6B64\u524D\u8C03\u7528\u6B21\u6570\u3002\u9884\u7B97\u7528\u5C3D\u540E\u4F1A\u4FDD\u7559\u5DF2\u5B8C\u6210\u5185\u5BB9\u3002"),
               h("details", null, h("summary", null, "Token \u4E0E\u8D39\u7528\u8BF4\u660E"), h("p", null, "\u5F53\u524D Harness \u8DEF\u7531\u672A\u63D0\u4F9B\u53EF\u9A8C\u8BC1\u7684 Token \u786C\u9650\u5236\uFF0C\u56E0\u6B64\u53EA\u5F00\u653E\u8C03\u7528\u6B21\u6570\u9884\u7B97\u3002\u5B9E\u9645 Token \u7528\u91CF\u6309\u6A21\u578B\u8FD4\u56DE\u8BB0\u5F55\uFF1B\u8D39\u7528\u672A\u77E5\u3002"))
             ),

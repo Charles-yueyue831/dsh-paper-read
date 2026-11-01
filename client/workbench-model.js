@@ -17,3 +17,23 @@ export function evidenceFor(report,ids){
  for(const kind of ['references','citations','discovery'])for(const p of report.research?.[kind]||[])if(ids.includes(p.evidenceId))found.push({id:p.evidenceId,text:p.abstract||'仅有出版元数据，不能据此验证技术效果。',locator:p.title,url:p.url});
  return found;
 }
+
+// Use the running host contract, never the installed package version, as authority.
+export function researchCompatibility(tools) {
+ if (!Array.isArray(tools)) return '正在检查研究服务，请稍候或刷新会话。';
+ for (const action of ['analyze','resume']) {
+  const fields=tools.find(t=>t.name==='paper_insight_'+action)?.parameters?.properties;
+  if (!fields?.maxCalls || !fields?.maxTotalTokens) return '研究界面已更新，但后台服务仍是旧版。请完全退出并重新打开 DeepSeek Harness；网页端需重启对应服务，然后刷新页面。';
+ }
+ return '';
+}
+export function failureStatus(error, status) {
+ const saved=Boolean(error?.key && error?.runId);
+ if(status==='cancelled')return saved?'研究已取消，已完成的内容已保存，可从研究历史继续。':'操作已取消，未生成可恢复的研究记录。';
+ if(status==='budget-paused')return saved?'研究已暂停：预算已用完，已完成内容已保存。请在研究历史中调整预算并继续。':'操作因预算限制暂停，未生成可恢复的研究记录。';
+ return saved?'研究未完成，已完成的内容已保存，可从研究历史继续。':'操作未完成，尚未生成可恢复的研究记录。';
+}
+export function recoverJob(jobs,sessions,session) {
+ const valid=(jobs||[]).filter(j=>j.status==='running' && typeof j.id==='string' && typeof j.action==='string' && sessions.some(s=>s.id===j.sessionId));
+ return valid.find(j=>j.sessionId===session) || (!session?valid[0]:null) || null;
+}

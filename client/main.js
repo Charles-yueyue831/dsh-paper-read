@@ -1,4 +1,4 @@
-import { modes, modeLabels, views, precheck, safeSource, progressCount } from './workbench-model.js';
+import { modes, modeLabels, views, precheck, safeSource, progressCount, researchCompatibility, failureStatus, recoverJob } from './workbench-model.js';
 import { workbenchStyle } from './workbench-style.js';
 import { readingStyle } from "./reading-style.js";
 import { createReportView } from "./report-view.js";
@@ -81,6 +81,8 @@ window.__ModuleLoader__.load({
       const [elapsed,setElapsed]=useState(0),[view,setView]=useState('discover'),[origin,setOrigin]=useState('quick'),[sources,setSources]=useState(['arxiv','openalex']),[minCitations,setMinCitations]=useState(''),[progress,setProgress]=useState(null),[cancelling,setCancelling]=useState(false),[localRef,setLocalRef]=useState(''),[remoteRef,setRemoteRef]=useState(''),[resumeTarget,setResumeTarget]=useState(null);
       useEffect(()=>{if(!job?.startedAt)return;const update=()=>setElapsed(Math.floor((Date.now()-job.startedAt)/1000));update();const timer=setInterval(update,1000);return()=>clearInterval(timer);},[job?.id]);
       const submitLock = useRef(false);
+      const [serverTools,setServerTools]=useState(null);
+      const compatibility=researchCompatibility(serverTools);
       const referenceInput = useRef(null);
       const busy = !!job || submitting;
       const historyArgs = (page = offset) => ({ query: historyQuery, deleted, ...(historyStatus ? {status:historyStatus} : {}), offset:page, limit:20 });
@@ -94,6 +96,9 @@ window.__ModuleLoader__.load({
         api("/sessions")
           .then((v) => {
             setSessions(v.sessions);
+            setServerTools(v.modules);
+            const restored=!submitLock.current && recoverJob(v.activeJobs,v.sessions,session);
+            if(restored){submitLock.current=true;setSession(restored.sessionId);setJob(restored);setStatus("已重新连接正在运行的任务。");return;}
             setSession((old) =>
               v.sessions.some((s) => s.id === old)
                 ? old
@@ -105,7 +110,7 @@ window.__ModuleLoader__.load({
         refresh();
       }, []);
       useEffect(() => {
-        setProgress(null);setError('');setTopics('');setHistoryQuery('');setHistoryStatus('');setDeleted(false);setDetail(null);setReference('');setLocalRef('');setRemoteRef('');setResumeTarget(null);setQuery('');setRuns([]); setSelected([]); setReport(''); setBundle(null); setDetail(null); setPapers([]); setOffset(0);
+        setProgress(null);setError('');setTopics('');setHistoryQuery('');setHistoryStatus('');setDeleted(false);setDetail(null);setReference('');setLocalRef('');setRemoteRef('');setResumeTarget(null);setQuery('');setRuns([]); setSelected([]); setReport(''); setBundle(null); setDetail(null); setPapers([]); setOffset(0);setTotal(0);setStatus('已切换研究会话。');
         if (session) run('library', {offset:0,limit:20,deleted:false});
       }, [session]);
       useEffect(() => {
@@ -134,7 +139,7 @@ window.__ModuleLoader__.load({
               if (!stopped) setJob({id:next.id,action:'library',sessionId:job.sessionId,background:true});
             };
             if (value.error) {
-              setStatus('研究未完成，已保留可恢复的内容。');
+              setStatus(failureStatus(value.error,value.status));
               setError(explainFailure(value.error.message));
               if (value.error.candidates) setPapers(value.error.candidates);
               if (value.error.key) await queueHistory();
@@ -158,7 +163,7 @@ window.__ModuleLoader__.load({
               setStatus(`发现 ${r.newPapers.length} 篇新增或更新论文。`);
             } else if (r.markdown) {
               if(job.action==='export_report'){const url=URL.createObjectURL(new Blob([r.markdown],{type:'text/markdown;charset=utf-8'}));const a=document.createElement('a');a.href=url;a.download=r.filename||'research-draft.md';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}
-              else{setReport(r.markdown);setBundle(r);}
+              else{setReport(r.markdown);setBundle(r);setView('report');}
               if(job.reloadHistory) { await queueHistory(); return; }
             }
             else if (r.reportPath) {
@@ -200,6 +205,7 @@ window.__ModuleLoader__.load({
         if (submitLock.current) return;
         setError("");
         if(['analyze','resume'].includes(action)){
+          if(compatibility){setError(compatibility);return;}
           const calls=Number(maxCalls),tokens=maxTotalTokens?Number(maxTotalTokens):null;
           if(!Number.isInteger(calls)||calls<1||calls>1000||tokens!==null&&(!Number.isInteger(tokens)||tokens<1||tokens>10000000)){setError('请输入有效预算：调用次数 1–1000，Token 为正整数或留空。');return;}
           args={...args,maxCalls:calls,maxTotalTokens:tokens,...(mode&&!args.modules?{mode}:{})};
@@ -249,7 +255,7 @@ window.__ModuleLoader__.load({
           modules,
         });
       };
-      const issue=precheck({session,reference,modules,maxCalls,busy});
+      const issue=compatibility || precheck({session,reference,modules,maxCalls,busy});
       const selectPaper=p=>{setLocal(false);setReference(p.id||p.url||p.title);setView('create');setError('');};
       const search=()=>{if(!query.trim()){setError('请输入研究主题。');return;}if(!sources.length){setError('请选择至少一个论文来源。');return;}run('search',{query:query.trim(),sources,...Object.fromEntries(Object.entries(advanced).filter(([,v])=>v)),...(minCitations!==''?{minCitations:Number(minCitations)}:{}),limit:10});};
       const panel=(id,children)=>h('div',{id:'pi-panel-'+id,role:'tabpanel','aria-labelledby':'pi-tab-'+id,hidden:view!==id,className:'pi-panel'},children);
@@ -262,6 +268,7 @@ window.__ModuleLoader__.load({
         h('section',{className:'pi-status','aria-label':'任务状态'},h('div',{role:'status'},status),job?.startedAt?h('p',{className:'pi-small'},`本次操作已等待 ${elapsed} 秒`):null,progress?.usage?h('p',null,`模型调用 ${progress.usage.calls} 次 · 已知 ${progress.usage.knownTokens} Token · ${progress.usage.unknownUsageCalls} 次用量未知 · 费用未知`):null,
           h('div',{className:'pi-actions'},job?h('button',{disabled:cancelling,onClick:async()=>{setCancelling(true);try{await api('/cancel',{id:job.id});setStatus('正在取消，等待当前操作结束；后续阶段将停止。');}catch(e){setError(e.message);setCancelling(false);}}},cancelling?'正在取消…':'取消任务'):null,
             report?h('button',{onClick:()=>setView('report')},'查看报告'):null)),
+        compatibility?h('p',{role:'status',className:'pi-note'},compatibility):null,
         error?h('p',{role:'alert',className:'pi-error'},error):null,
         panel('discover',h('div',{className:'pi-columns'},h('div',null,
           h('form',{className:'pi-card',onSubmit:e=>{e.preventDefault();search();}},h('h2',null,'寻找值得研究的论文'),input('主题关键词',query,setQuery),
@@ -278,7 +285,7 @@ window.__ModuleLoader__.load({
           h('label',null,h('input',{type:'checkbox',checked:local,onChange:e=>{setReference(local?remoteRef:localRef);if(local)setLocalRef(reference);else setRemoteRef(reference);setLocal(e.target.checked);}}),'使用工作区内本地文件'),
           input(local?'PDF / 文本相对路径':'论文标题 / 链接 / DOI / arXiv 编号',reference,setReference),h('p',{className:'pi-small'},local?'文件应已在所选工作区内，此处不会上传文件。':'标题会先检索匹配；遇到多个候选时需选择论文。'),
           h('fieldset',null,h('legend',null,'研究内容'),...Object.entries({'理解论文':['paper','first-principles','beginner'],'研究与迁移':['landscape','transfer','sandbox'],'产品与行动':['features','products','experience','decision']}).map(([group,ids])=>h('div',{key:group},h('h3',null,group),...ids.map(id=>h('label',{key:id},h('input',{type:'checkbox',checked:modules.includes(id),onChange:e=>setCustom(e.target.checked?[...modules,id]:modules.filter(m=>m!==id))}),labels[id])))),h('div',{className:'pi-actions'},button('全选',()=>setCustom(Object.keys(labels))),button('清空',()=>setCustom([])))),
-          input('最多模型调用次数',maxCalls,setMaxCalls,'number'),h('p',{className:'pi-small'},'继续或补充研究时包含此前调用次数。预算用尽后会保留已完成内容。'),h('details',null,h('summary',null,'Token 与费用说明'),h('p',null,'当前 Harness 路由未提供可验证的 Token 硬限制，因此只开放调用次数预算。实际 Token 用量按模型返回记录；费用未知。'))),
+          !compatibility?input('最多模型调用次数',maxCalls,setMaxCalls,'number'):h('p',null,'研究服务就绪后可设置调用预算。'),h('p',{className:'pi-small'},'继续或补充研究时包含此前调用次数。预算用尽后会保留已完成内容。'),h('details',null,h('summary',null,'Token 与费用说明'),h('p',null,'当前 Harness 路由未提供可验证的 Token 硬限制，因此只开放调用次数预算。实际 Token 用量按模型返回记录；费用未知。'))),
           h('aside',{className:'pi-card pi-preview'},h('h2',null,'开始前确认'),h('p',null,reference||'尚未指定论文'),h('p',null,`本次 ${modules.length} 项：${modules.map(id=>labels[id]).join('、')||'尚未选择'}`),h('p',null,`最多 ${maxCalls||'未设置'} 次模型调用`),h('p',null,'将使用所选会话的模型。文件权限及来源访问能力会在执行时检查；报告保存在该工作区配置的数据目录。'),h('p',{role:'status'},issue||'配置已就绪，可以开始。'),h('button',{className:'pi-primary',disabled:!!issue,onClick:()=>analyze(reference)},'开始研究')))),
         panel('history',h('section',{className:'pi-card'},h('h2',null,'研究历史'),h('p',null,'查看已完成报告，或接着完成未完成的研究。重新分析会保留旧版本。'),
           input('搜索论文、备注或报告正文',historyQuery,setHistoryQuery),h('label',null,'研究状态',h('select',{value:historyStatus,onChange:e=>setHistoryStatus(e.target.value)},h('option',{value:''},'全部状态'),...Object.entries(statusLabels).map(([v,l])=>h('option',{key:v,value:v},l)))),h('label',null,h('input',{type:'checkbox',checked:deleted,onChange:e=>setDeleted(e.target.checked)}),'查看已删除记录'),
