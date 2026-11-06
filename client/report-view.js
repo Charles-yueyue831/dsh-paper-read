@@ -1,3 +1,4 @@
+import { currentChapter } from './reader-model.js';
 import {
   splitReport,
   headingSlug,
@@ -73,6 +74,7 @@ export function createReportView(React, MarkdownText) {
   }
   return function ReportView({ text, onDownload }) {
     const [view, setView] = useState("read");
+    const [activeChapter,setActiveChapter]=useState("");
     const root = useRef(null);
     const prefix = "pi-report-" + useId().replace(/[^a-zA-Z0-9-]/g, "");
     const model = useMemo(() => readingModel(text), [text]);
@@ -87,6 +89,13 @@ export function createReportView(React, MarkdownText) {
         heading.id=id; heading.tabIndex=-1; occupied.add(id);
       }
     },[text,view,prefix]);
+    useEffect(()=>{
+      if(view!=='read'||!root.current)return;
+      const scrollRoot=root.current.closest('.pi-reader-main');
+      const update=()=>{const top=(scrollRoot?.getBoundingClientRect().top||0)+100;const anchors=new Set(model.chapters.map(ch=>prefix+'-'+ch.anchor));const headings=[...root.current.querySelectorAll('[id]')].filter(el=>anchors.has(el.id)).map(el=>({id:el.id.slice(prefix.length+1),top:el.getBoundingClientRect().top}));setActiveChapter(currentChapter(headings,top));};
+      scrollRoot?.addEventListener('scroll',update,{passive:true});update();
+      return()=>scrollRoot?.removeEventListener('scroll',update);
+    },[text,view,model,prefix]);
     const jump = (id) => {
       const target = root.current && [...root.current.querySelectorAll("[id]")].find(e => e.id === id);
       if (!target) return false;
@@ -121,7 +130,7 @@ export function createReportView(React, MarkdownText) {
         model.chapters.length ? h('nav',{className:'pi-reading-nav','aria-label':'报告章节'},
           h('p',{className:'pi-eyebrow'},'阅读路线'),
           ...model.groups.map(group => h('div',{key:group.label,className:'pi-nav-group'},h('strong',null,group.label),
-            ...group.chapters.map(ch => h('button',{type:'button',key:ch.anchor,onClick:()=>jump(prefix+'-'+ch.anchor)},ch.label))))) : null,
+            ...group.chapters.map(ch => h('button',{type:'button',key:ch.anchor,'aria-current':activeChapter===ch.anchor?'location':undefined,onClick:()=>jump(prefix+'-'+ch.anchor)},ch.label))))) : null,
         h('article',{className:'pi-report-body',ref:root,'aria-label':'研究报告内容',key:text,
           onClickCapture:event=>{
             const a=event.target.closest?.('a[href]'); if(!a)return;

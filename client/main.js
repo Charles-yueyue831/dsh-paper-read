@@ -1,3 +1,5 @@
+import { libraryRecords } from './reader-model.js';
+import { readerStyle } from './reader-style.js';
 import { modes, modeLabels, views, precheck, safeSource, progressCount, researchCompatibility, failureStatus, recoverJob } from './workbench-model.js';
 import { workbenchStyle } from './workbench-style.js';
 import { readingStyle } from "./reading-style.js";
@@ -45,6 +47,9 @@ window.__ModuleLoader__.load({
     }
     function Workbench() {
       const reportAnchor = useRef(null);
+      const [libraryFilter,setLibraryFilter]=useState(''),[activeRecord,setActiveRecord]=useState(''),[showStatus,setShowStatus]=useState(false);
+      const [theme,setTheme]=useState(()=>{try{return localStorage.getItem('paper-insight-theme')||'auto';}catch{return 'auto';}});
+      useEffect(()=>{try{localStorage.setItem('paper-insight-theme',theme);}catch{}},[theme]);
       const [sessions, setSessions] = useState([]),
         [session, setSession] = useState(""),
         [query, setQuery] = useState(""),
@@ -110,7 +115,7 @@ window.__ModuleLoader__.load({
         refresh();
       }, []);
       useEffect(() => {
-        setProgress(null);setError('');setTopics('');setHistoryQuery('');setHistoryStatus('');setDeleted(false);setDetail(null);setReference('');setLocalRef('');setRemoteRef('');setResumeTarget(null);setQuery('');setRuns([]); setSelected([]); setReport(''); setBundle(null); setDetail(null); setPapers([]); setOffset(0);setTotal(0);setStatus('已切换研究会话。');
+        setActiveRecord('');setLibraryFilter('');setProgress(null);setError('');setTopics('');setHistoryQuery('');setHistoryStatus('');setDeleted(false);setDetail(null);setReference('');setLocalRef('');setRemoteRef('');setResumeTarget(null);setQuery('');setRuns([]); setSelected([]); setReport(''); setBundle(null); setDetail(null); setPapers([]); setOffset(0);setTotal(0);setStatus('已切换研究会话。');
         if (session) run('library', {offset:0,limit:20,deleted:false});
       }, [session]);
       useEffect(() => {
@@ -260,12 +265,23 @@ window.__ModuleLoader__.load({
       const search=()=>{if(!query.trim()){setError('请输入研究主题。');return;}if(!sources.length){setError('请选择至少一个论文来源。');return;}run('search',{query:query.trim(),sources,...Object.fromEntries(Object.entries(advanced).filter(([,v])=>v)),...(minCitations!==''?{minCitations:Number(minCitations)}:{}),limit:10});};
       const panel=(id,children)=>h('div',{id:'pi-panel-'+id,role:'tabpanel','aria-labelledby':'pi-tab-'+id,hidden:view!==id,className:'pi-panel'},children);
       const setCustom=next=>{setModules(next);if(mode)setOrigin(mode);setMode('');};
-      return h('section',{className:'pi-workbench','aria-label':'论文研究工作台'},
-        h('h1',null,'论文 → 产品'),h('p',null,'从理解一篇论文，到验证一个产品机会。'),
-        h('label',null,'研究会话与工作区',h('select',{'aria-label':'研究会话',value:session,disabled:busy,onChange:e=>setSession(e.target.value)},h('option',{value:''},'请选择会话'),...sessions.map(s=>h('option',{key:s.id,value:s.id},(s.workspace||s.title)+' · '+s.id.slice(-8))))),
-        h('div',{className:'pi-actions'},button('刷新会话',refresh),busy?h('span',null,'任务执行期间不能切换工作区；可以自由切换下方视图。'):null),
+      const openRecord=r=>{setActiveRecord(r.key+'/'+r.runId); if(r.status==='completed'&&r.type!=='discovery')run('report',{key:r.key,runId:r.runId});else{setView('history');run('history_detail',{key:r.key,runId:r.runId});}};
+      return h('section',{className:'pi-workbench','data-theme':theme,'aria-label':'论文研究工作台'},
+        h('header',{className:'pi-topbar'},h('div',{className:'pi-brand'},h('span',{'aria-hidden':true},'◈'),h('h1',null,'论文研究')),
+          h('label',{className:'pi-session'},h('span',{className:'pi-small'},'工作区'),h('select',{'aria-label':'研究会话',value:session,disabled:busy,onChange:e=>setSession(e.target.value)},h('option',{value:''},'请选择会话'),...sessions.map(s=>h('option',{key:s.id,value:s.id},(s.workspace||s.title)+' · '+s.id.slice(-8))))),
+          button('刷新会话',refresh),h('button',{onClick:()=>repair()},'＋ 新建研究'),
+          h('button',{'aria-expanded':showStatus,onClick:()=>setShowStatus(!showStatus)},busy?'● 研究进行中':'任务状态'),
+          h('select',{'aria-label':'界面主题',value:theme,onChange:e=>setTheme(e.target.value)},h('option',{value:'auto'},'跟随系统'),h('option',{value:'light'},'浅色'),h('option',{value:'dark'},'深色'))),
+        h('div',{className:'pi-reader-shell'},
+          h('aside',{className:'pi-library','aria-label':'论文列表'},
+            h('div',{className:'pi-library-head'},h('strong',null,'我的研究'),h('span',{className:'pi-small'},`当前加载 ${runs.filter(r=>!r.record?.deletedAt).length} 条`)),
+            h('input',{type:'search','aria-label':'筛选当前论文列表',placeholder:'搜索已加载论文…',value:libraryFilter,onChange:e=>setLibraryFilter(e.target.value)}),
+            h('div',{className:'pi-library-list'},...libraryRecords(runs,libraryFilter).map(r=>h('button',{key:r.key+'/'+r.runId,className:'pi-library-item',disabled:busy,'aria-current':activeRecord===r.key+'/'+r.runId?'true':undefined,onClick:()=>openRecord(r)},h('span',null,r.displayTitle||r.paper?.title||'未识别的论文'),h('small',null,statusLabels[r.status]||r.status)))),
+            !runs.length?h('p',{className:'pi-small'},'这里将显示当前工作区的研究记录。'):null,
+            h('button',{onClick:()=>setView('history')},'管理全部研究记录')),
+          h('main',{className:'pi-reader-main'},
         h('nav',{className:'pi-tabs',role:'tablist','aria-label':'研究工作区'},...Object.entries(views).map(([id,label])=>h('button',{key:id,id:'pi-tab-'+id,role:'tab','aria-selected':view===id,'aria-controls':'pi-panel-'+id,tabIndex:view===id?0:-1,onClick:()=>setView(id),onKeyDown:e=>{const ids=Object.keys(views),i=ids.indexOf(id);let next;if(e.key==='ArrowRight')next=ids[(i+1)%4];if(e.key==='ArrowLeft')next=ids[(i+3)%4];if(e.key==='Home')next=ids[0];if(e.key==='End')next=ids[3];if(next){e.preventDefault();setView(next);document.getElementById('pi-tab-'+next)?.focus();}}},label))),
-        h('section',{className:'pi-status','aria-label':'任务状态'},h('div',{role:'status'},status),job?.startedAt?h('p',{className:'pi-small'},`本次操作已等待 ${elapsed} 秒`):null,progress?.usage?h('p',null,`模型调用 ${progress.usage.calls} 次 · 已知 ${progress.usage.knownTokens} Token · ${progress.usage.unknownUsageCalls} 次用量未知 · 费用未知`):null,
+        h('section',{className:'pi-status',hidden:!showStatus&&!busy&&!error,'aria-label':'任务状态'},h('div',{role:'status'},status),job?.startedAt?h('p',{className:'pi-small'},`本次操作已等待 ${elapsed} 秒`):null,progress?.usage?h('p',null,`模型调用 ${progress.usage.calls} 次 · 已知 ${progress.usage.knownTokens} Token · ${progress.usage.unknownUsageCalls} 次用量未知 · 费用未知`):null,
           h('div',{className:'pi-actions'},job?h('button',{disabled:cancelling,onClick:async()=>{setCancelling(true);try{await api('/cancel',{id:job.id});setStatus('正在取消，等待当前操作结束；后续阶段将停止。');}catch(e){setError(e.message);setCancelling(false);}}},cancelling?'正在取消…':'取消任务'):null,
             report?h('button',{onClick:()=>setView('report')},'查看报告'):null)),
         compatibility?h('p',{role:'status',className:'pi-note'},compatibility):null,
@@ -296,7 +312,7 @@ window.__ModuleLoader__.load({
         panel('report',h('section',{className:'pi-card pi-report-card',ref:reportAnchor},h('h2',null,'研究报告'),report?h(React.Fragment,null,
           h(ResearchControls,{bundle,run,busy,part:'overview'}),
           h(ReportView,{text:report,onDownload:()=>{const url=URL.createObjectURL(new Blob([report],{type:'text/markdown;charset=utf-8'}));const a=document.createElement('a');a.href=url;a.download='paper-research.md';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}}),
-          h(ResearchControls,{bundle,run,busy,part:'actions'})):h('p',null,'完成研究后点击“查看报告”，或从研究历史打开已有报告。'))));
+          h(ResearchControls,{bundle,run,busy,part:'actions'})):h('p',null,'完成研究后点击“查看报告”，或从研究历史打开已有报告。'))))));
 
     }
     return {
@@ -304,7 +320,7 @@ window.__ModuleLoader__.load({
       apply(ctx) {
         ctx.effect(() => {
           const style = document.createElement("style");
-          style.textContent = css + readingStyle + workbenchStyle;
+          style.textContent = css + readingStyle + workbenchStyle + readerStyle;
           document.head.appendChild(style);
           return () => style.remove();
         });

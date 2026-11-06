@@ -1,27 +1,21 @@
 {
-  "version": "0.2.6",
-  "checkedAt": "2026-11-02",
-  "passed": false,
-  "status": "release-authorized-with-live-model-limitation",
-  "tests": 94,
-  "testsPassed": 94,
+  "version": "0.2.7",
+  "passed": true,
+  "scope": "UI release; live paid model analysis not rerun",
+  "automatedTests": 96,
   "hostSmoke": {
     "passed": true,
     "tools": 28,
     "modelCalls": 6,
     "sections": 10,
-    "model": "fixture adapter"
+    "model": "synthetic fixture through real Harness runtime"
   },
   "browser": {
-    "nativeHost": true,
-    "publicSearch": true,
-    "refreshReconnect": true,
-    "configurationPresets": true,
-    "truthfulFailureStatus": true
+    "reportOpen": true,
+    "diagrams": true,
+    "chapterNavigation": true,
+    "themeSwitch": true,
+    "narrowLayoutNoHorizontalOverflow": true
   },
-  "liveModel": {
-    "passed": false,
-    "status": "not-rerun"
-  },
-  "releaseAuthorized": true
+  "referenceUI": "https://github.com/JoanYu/dsh-paper-reader"
 }

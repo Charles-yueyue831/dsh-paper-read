@@ -29,6 +29,31 @@
     mod
   ));
 
+  // client/reader-model.js
+  function currentChapter(headings, readingLine) {
+    let active = headings[0]?.id || "";
+    for (const heading of headings) if (heading.top <= readingLine) active = heading.id;
+    return active;
+  }
+  function libraryRecords(runs, query = "") {
+    const needle = query.trim().toLocaleLowerCase();
+    return runs.filter((record) => !record.record?.deletedAt && (record.displayTitle || record.paper?.title || "\u672A\u8BC6\u522B\u7684\u8BBA\u6587").toLocaleLowerCase().includes(needle));
+  }
+
+  // client/reader-style.js
+  var readerStyle = `
+.pi-workbench{--paper-bg:#fffdf8;--paper-sidebar:#f7f5f0;--paper-ink:#292d32;--paper-muted:#6e737b;--paper-line:#e4e0d6;--paper-accent:#2b4a6f;--paper-hover:#edf1f6;--paper-serif:'Songti SC','Noto Serif SC',Georgia,serif;padding:0;overflow:hidden;background:var(--paper-bg);color:var(--paper-ink);display:flex;flex-direction:column;--dsw-alias-label-primary:var(--paper-ink);--dsw-alias-label-secondary:var(--paper-muted);--dsw-alias-border-l2:var(--paper-line);--dsw-alias-bg-layer-1:var(--paper-bg);--dsw-alias-bg-layer-2:var(--paper-sidebar);--dsw-alias-bg-layer-3:var(--paper-hover)}
+.pi-workbench[data-theme=dark]{--paper-bg:#202226;--paper-sidebar:#191b1e;--paper-ink:#e4e6e9;--paper-muted:#a6abb5;--paper-line:#383d46;--paper-accent:#adc5e5;--paper-hover:#303a49}
+@media(prefers-color-scheme:dark){.pi-workbench[data-theme=auto]{--paper-bg:#202226;--paper-sidebar:#191b1e;--paper-ink:#e4e6e9;--paper-muted:#a6abb5;--paper-line:#383d46;--paper-accent:#adc5e5;--paper-hover:#303a49}}
+.pi-workbench [hidden]{display:none!important}.pi-workbench p{color:var(--paper-muted)}
+.pi-topbar{display:flex;align-items:center;gap:12px;padding:10px 20px;border-bottom:1px solid var(--paper-line);flex:none;flex-wrap:wrap}.pi-brand{display:flex;gap:10px;align-items:center;white-space:nowrap}.pi-brand>span{color:var(--paper-accent);font-size:24px}.pi-workbench .pi-brand h1{font-size:17px;letter-spacing:1px;font-weight:500}.pi-workbench .pi-session{display:flex;align-items:center;gap:8px;flex:1;min-width:160px;margin:0}.pi-session select{min-width:0;max-width:480px;text-overflow:ellipsis}.pi-workbench .pi-topbar>select{width:auto}.pi-topbar button{white-space:nowrap}
+.pi-reader-shell{display:grid;grid-template-columns:260px minmax(0,1fr);flex:1;min-height:0}.pi-library{background:var(--paper-sidebar);border-right:1px solid var(--paper-line);padding:18px 12px;display:flex;flex-direction:column;gap:14px;min-height:0}.pi-library-head{display:flex;align-items:center;justify-content:space-between;gap:8px}.pi-library-list{overflow:auto;flex:1;min-height:0}.pi-workbench .pi-library-item{display:block;width:100%;text-align:left;border:1px solid transparent;background:transparent;padding:12px 10px;margin:0 0 5px;border-radius:5px}.pi-library-item>span{font:15px/1.65 var(--paper-serif);display:block;overflow-wrap:anywhere}.pi-library-item small{display:block;color:var(--paper-muted);font-size:11px;margin-top:6px}.pi-workbench .pi-library-item:hover,.pi-workbench .pi-library-item[aria-current=true]{background:var(--paper-bg);border-color:var(--paper-line)}
+.pi-reader-main{min-width:0;overflow:auto;padding:0 clamp(16px,3vw,40px) 40px}.pi-tabs{margin:0 0 24px;padding:12px 0;gap:6px;position:sticky;top:0;background:var(--paper-bg);z-index:2}.pi-workbench .pi-tabs button{border-color:transparent;background:transparent;border-radius:5px}.pi-workbench .pi-tabs [aria-selected=true]{color:var(--paper-accent);background:var(--paper-hover);border-color:var(--paper-line)}
+.pi-workbench button{border-radius:5px}.pi-workbench .pi-primary{background:#2b4a6f;color:#fff}.pi-workbench .pi-card{border-radius:6px;background:var(--paper-bg);box-shadow:none}.pi-columns{grid-template-columns:minmax(240px,300px) minmax(0,1fr);gap:20px}.pi-workbench .pi-report-card{border:0;padding:0;max-width:none}.pi-report-card>h2{font-size:12px;color:var(--paper-muted);font-weight:400;letter-spacing:2px}.pi-report-body [id]{scroll-margin-top:90px}.pi-report-body{font-family:var(--paper-serif);max-width:820px;font-size:17px;line-height:1.95}.pi-report-body p{color:var(--paper-ink)}.pi-report-body .pi-chapter h2{font-size:24px}.pi-report-toolbar,.pi-reading-nav,.pi-report-body summary,.pi-eyebrow{font-family:system-ui,sans-serif}.pi-reading-layout{grid-template-columns:170px minmax(0,1fr);gap:28px}.pi-reading-nav{top:76px;max-height:calc(100dvh - 230px)}.pi-workbench .pi-nav-group button[aria-current=location]{border-left:2px solid var(--paper-accent);color:var(--paper-accent);background:var(--paper-hover);border-radius:0}.pi-report-body .pi-overview{background:var(--paper-sidebar);border-radius:6px}.pi-report-body .pi-eyebrow{color:var(--paper-accent)}.pi-status{font-size:13px;border-radius:4px;border-left-color:var(--paper-accent)}.pi-result h3{font-family:var(--paper-serif);font-size:18px}.pi-workbench .pi-error{color:#c55442}.pi-report-toolbar{gap:8px}.pi-diagram{border-radius:5px}.pi-workbench a{color:var(--paper-accent)}
+@container paper (max-width:1199px){.pi-reader-shell{grid-template-columns:210px minmax(0,1fr)}.pi-columns{grid-template-columns:1fr}.pi-preview{position:static}.pi-reading-layout{grid-template-columns:1fr}.pi-reading-nav{position:static;max-height:none;border:0;display:flex;flex-wrap:wrap;gap:12px}.pi-nav-group{flex:1 1 140px}.pi-reader-main{padding-inline:18px}}
+@container paper (max-width:699px){.pi-reader-shell{grid-template-columns:1fr}.pi-library{display:none}.pi-topbar{padding:10px;gap:8px}.pi-workbench .pi-session{flex-basis:100%;order:2}.pi-workbench .pi-brand h1{font-size:15px}.pi-reader-main{padding-inline:12px}.pi-tabs{gap:0}.pi-tabs button{padding:8px;font-size:12px}.pi-report-body{font-size:16px}.pi-topbar>button{padding:6px 8px;font-size:12px}.pi-reading-layout{gap:16px}}
+`;
+
   // client/workbench-model.js
   var modes = { quick: ["paper", "first-principles", "beginner"], deep: ["paper", "first-principles", "landscape", "transfer", "beginner"], product: ["paper", "sandbox", "features", "products", "experience", "decision"] };
   var modeLabels = { quick: "\u5FEB\u901F\u9605\u8BFB", deep: "\u6DF1\u5EA6\u7814\u7A76", product: "\u4EA7\u54C1\u7814\u7A76" };
@@ -326,6 +351,7 @@
     }
     return function ReportView({ text, onDownload }) {
       const [view, setView] = useState("read");
+      const [activeChapter, setActiveChapter] = useState("");
       const root = useRef(null);
       const prefix = "pi-report-" + useId().replace(/[^a-zA-Z0-9-]/g, "");
       const model = useMemo(() => readingModel(text), [text]);
@@ -345,6 +371,19 @@
           occupied.add(id);
         }
       }, [text, view, prefix]);
+      useEffect(() => {
+        if (view !== "read" || !root.current) return;
+        const scrollRoot = root.current.closest(".pi-reader-main");
+        const update = () => {
+          const top = (scrollRoot?.getBoundingClientRect().top || 0) + 100;
+          const anchors = new Set(model.chapters.map((ch) => prefix + "-" + ch.anchor));
+          const headings = [...root.current.querySelectorAll("[id]")].filter((el) => anchors.has(el.id)).map((el) => ({ id: el.id.slice(prefix.length + 1), top: el.getBoundingClientRect().top }));
+          setActiveChapter(currentChapter(headings, top));
+        };
+        scrollRoot?.addEventListener("scroll", update, { passive: true });
+        update();
+        return () => scrollRoot?.removeEventListener("scroll", update);
+      }, [text, view, model, prefix]);
       const jump = (id) => {
         const target = root.current && [...root.current.querySelectorAll("[id]")].find((e) => e.id === id);
         if (!target) return false;
@@ -406,7 +445,7 @@
               "div",
               { key: group.label, className: "pi-nav-group" },
               h("strong", null, group.label),
-              ...group.chapters.map((ch) => h("button", { type: "button", key: ch.anchor, onClick: () => jump(prefix + "-" + ch.anchor) }, ch.label))
+              ...group.chapters.map((ch) => h("button", { type: "button", key: ch.anchor, "aria-current": activeChapter === ch.anchor ? "location" : void 0, onClick: () => jump(prefix + "-" + ch.anchor) }, ch.label))
             ))
           ) : null,
           h(
@@ -703,6 +742,20 @@
       }
       function Workbench() {
         const reportAnchor = useRef(null);
+        const [libraryFilter, setLibraryFilter] = useState(""), [activeRecord, setActiveRecord] = useState(""), [showStatus, setShowStatus] = useState(false);
+        const [theme, setTheme] = useState(() => {
+          try {
+            return localStorage.getItem("paper-insight-theme") || "auto";
+          } catch {
+            return "auto";
+          }
+        });
+        useEffect(() => {
+          try {
+            localStorage.setItem("paper-insight-theme", theme);
+          } catch {
+          }
+        }, [theme]);
         const [sessions, setSessions] = useState([]), [session, setSession] = useState(""), [query, setQuery] = useState(""), [reference, setReference] = useState(""), [local, setLocal] = useState(false), [modules, setModules] = useState([...modes.quick]), [papers, setPapers] = useState([]), [runs, setRuns] = useState([]), [selected, setSelected] = useState([]), [historyQuery, setHistoryQuery] = useState(""), [historyStatus, setHistoryStatus] = useState(""), [deleted, setDeleted] = useState(false), [offset, setOffset] = useState(0), [total, setTotal] = useState(0), [detail, setDetail] = useState(null), [submitting, setSubmitting] = useState(false), [report, setReport] = useState(""), [bundle, setBundle] = useState(null), [mode, setMode] = useState("quick"), [maxCalls, setMaxCalls] = useState("64"), [maxTotalTokens, setMaxTotalTokens] = useState(""), [status, setStatus] = useState("\u9009\u62E9\u4F1A\u8BDD\u4EE5\u4F7F\u7528\u5BF9\u5E94\u5DE5\u4F5C\u533A\u4E0E\u6A21\u578B\u3002"), [error, setError] = useState(""), [job, setJob] = useState(null), [topics, setTopics] = useState(""), [advanced, setAdvanced] = useState({
           author: "",
           venue: "",
@@ -755,6 +808,8 @@
           refresh();
         }, []);
         useEffect(() => {
+          setActiveRecord("");
+          setLibraryFilter("");
           setProgress(null);
           setError("");
           setTopics("");
@@ -975,160 +1030,191 @@
           if (mode) setOrigin(mode);
           setMode("");
         };
+        const openRecord = (r) => {
+          setActiveRecord(r.key + "/" + r.runId);
+          if (r.status === "completed" && r.type !== "discovery") run("report", { key: r.key, runId: r.runId });
+          else {
+            setView("history");
+            run("history_detail", { key: r.key, runId: r.runId });
+          }
+        };
         return h(
           "section",
-          { className: "pi-workbench", "aria-label": "\u8BBA\u6587\u7814\u7A76\u5DE5\u4F5C\u53F0" },
-          h("h1", null, "\u8BBA\u6587 \u2192 \u4EA7\u54C1"),
-          h("p", null, "\u4ECE\u7406\u89E3\u4E00\u7BC7\u8BBA\u6587\uFF0C\u5230\u9A8C\u8BC1\u4E00\u4E2A\u4EA7\u54C1\u673A\u4F1A\u3002"),
-          h("label", null, "\u7814\u7A76\u4F1A\u8BDD\u4E0E\u5DE5\u4F5C\u533A", h("select", { "aria-label": "\u7814\u7A76\u4F1A\u8BDD", value: session, disabled: busy, onChange: (e) => setSession(e.target.value) }, h("option", { value: "" }, "\u8BF7\u9009\u62E9\u4F1A\u8BDD"), ...sessions.map((s) => h("option", { key: s.id, value: s.id }, (s.workspace || s.title) + " \xB7 " + s.id.slice(-8))))),
-          h("div", { className: "pi-actions" }, button("\u5237\u65B0\u4F1A\u8BDD", refresh), busy ? h("span", null, "\u4EFB\u52A1\u6267\u884C\u671F\u95F4\u4E0D\u80FD\u5207\u6362\u5DE5\u4F5C\u533A\uFF1B\u53EF\u4EE5\u81EA\u7531\u5207\u6362\u4E0B\u65B9\u89C6\u56FE\u3002") : null),
-          h("nav", { className: "pi-tabs", role: "tablist", "aria-label": "\u7814\u7A76\u5DE5\u4F5C\u533A" }, ...Object.entries(views).map(([id, label]) => h("button", { key: id, id: "pi-tab-" + id, role: "tab", "aria-selected": view === id, "aria-controls": "pi-panel-" + id, tabIndex: view === id ? 0 : -1, onClick: () => setView(id), onKeyDown: (e) => {
-            const ids = Object.keys(views), i = ids.indexOf(id);
-            let next;
-            if (e.key === "ArrowRight") next = ids[(i + 1) % 4];
-            if (e.key === "ArrowLeft") next = ids[(i + 3) % 4];
-            if (e.key === "Home") next = ids[0];
-            if (e.key === "End") next = ids[3];
-            if (next) {
-              e.preventDefault();
-              setView(next);
-              document.getElementById("pi-tab-" + next)?.focus();
-            }
-          } }, label))),
+          { className: "pi-workbench", "data-theme": theme, "aria-label": "\u8BBA\u6587\u7814\u7A76\u5DE5\u4F5C\u53F0" },
           h(
-            "section",
-            { className: "pi-status", "aria-label": "\u4EFB\u52A1\u72B6\u6001" },
-            h("div", { role: "status" }, status),
-            job?.startedAt ? h("p", { className: "pi-small" }, `\u672C\u6B21\u64CD\u4F5C\u5DF2\u7B49\u5F85 ${elapsed} \u79D2`) : null,
-            progress?.usage ? h("p", null, `\u6A21\u578B\u8C03\u7528 ${progress.usage.calls} \u6B21 \xB7 \u5DF2\u77E5 ${progress.usage.knownTokens} Token \xB7 ${progress.usage.unknownUsageCalls} \u6B21\u7528\u91CF\u672A\u77E5 \xB7 \u8D39\u7528\u672A\u77E5`) : null,
-            h(
-              "div",
-              { className: "pi-actions" },
-              job ? h("button", { disabled: cancelling, onClick: async () => {
-                setCancelling(true);
-                try {
-                  await api("/cancel", { id: job.id });
-                  setStatus("\u6B63\u5728\u53D6\u6D88\uFF0C\u7B49\u5F85\u5F53\u524D\u64CD\u4F5C\u7ED3\u675F\uFF1B\u540E\u7EED\u9636\u6BB5\u5C06\u505C\u6B62\u3002");
-                } catch (e) {
-                  setError(e.message);
-                  setCancelling(false);
-                }
-              } }, cancelling ? "\u6B63\u5728\u53D6\u6D88\u2026" : "\u53D6\u6D88\u4EFB\u52A1") : null,
-              report ? h("button", { onClick: () => setView("report") }, "\u67E5\u770B\u62A5\u544A") : null
-            )
+            "header",
+            { className: "pi-topbar" },
+            h("div", { className: "pi-brand" }, h("span", { "aria-hidden": true }, "\u25C8"), h("h1", null, "\u8BBA\u6587\u7814\u7A76")),
+            h("label", { className: "pi-session" }, h("span", { className: "pi-small" }, "\u5DE5\u4F5C\u533A"), h("select", { "aria-label": "\u7814\u7A76\u4F1A\u8BDD", value: session, disabled: busy, onChange: (e) => setSession(e.target.value) }, h("option", { value: "" }, "\u8BF7\u9009\u62E9\u4F1A\u8BDD"), ...sessions.map((s) => h("option", { key: s.id, value: s.id }, (s.workspace || s.title) + " \xB7 " + s.id.slice(-8))))),
+            button("\u5237\u65B0\u4F1A\u8BDD", refresh),
+            h("button", { onClick: () => repair() }, "\uFF0B \u65B0\u5EFA\u7814\u7A76"),
+            h("button", { "aria-expanded": showStatus, onClick: () => setShowStatus(!showStatus) }, busy ? "\u25CF \u7814\u7A76\u8FDB\u884C\u4E2D" : "\u4EFB\u52A1\u72B6\u6001"),
+            h("select", { "aria-label": "\u754C\u9762\u4E3B\u9898", value: theme, onChange: (e) => setTheme(e.target.value) }, h("option", { value: "auto" }, "\u8DDF\u968F\u7CFB\u7EDF"), h("option", { value: "light" }, "\u6D45\u8272"), h("option", { value: "dark" }, "\u6DF1\u8272"))
           ),
-          compatibility ? h("p", { role: "status", className: "pi-note" }, compatibility) : null,
-          error ? h("p", { role: "alert", className: "pi-error" }, error) : null,
-          panel("discover", h(
+          h(
             "div",
-            { className: "pi-columns" },
+            { className: "pi-reader-shell" },
             h(
-              "div",
-              null,
-              h(
-                "form",
-                { className: "pi-card", onSubmit: (e) => {
+              "aside",
+              { className: "pi-library", "aria-label": "\u8BBA\u6587\u5217\u8868" },
+              h("div", { className: "pi-library-head" }, h("strong", null, "\u6211\u7684\u7814\u7A76"), h("span", { className: "pi-small" }, `\u5F53\u524D\u52A0\u8F7D ${runs.filter((r) => !r.record?.deletedAt).length} \u6761`)),
+              h("input", { type: "search", "aria-label": "\u7B5B\u9009\u5F53\u524D\u8BBA\u6587\u5217\u8868", placeholder: "\u641C\u7D22\u5DF2\u52A0\u8F7D\u8BBA\u6587\u2026", value: libraryFilter, onChange: (e) => setLibraryFilter(e.target.value) }),
+              h("div", { className: "pi-library-list" }, ...libraryRecords(runs, libraryFilter).map((r) => h("button", { key: r.key + "/" + r.runId, className: "pi-library-item", disabled: busy, "aria-current": activeRecord === r.key + "/" + r.runId ? "true" : void 0, onClick: () => openRecord(r) }, h("span", null, r.displayTitle || r.paper?.title || "\u672A\u8BC6\u522B\u7684\u8BBA\u6587"), h("small", null, statusLabels[r.status] || r.status)))),
+              !runs.length ? h("p", { className: "pi-small" }, "\u8FD9\u91CC\u5C06\u663E\u793A\u5F53\u524D\u5DE5\u4F5C\u533A\u7684\u7814\u7A76\u8BB0\u5F55\u3002") : null,
+              h("button", { onClick: () => setView("history") }, "\u7BA1\u7406\u5168\u90E8\u7814\u7A76\u8BB0\u5F55")
+            ),
+            h(
+              "main",
+              { className: "pi-reader-main" },
+              h("nav", { className: "pi-tabs", role: "tablist", "aria-label": "\u7814\u7A76\u5DE5\u4F5C\u533A" }, ...Object.entries(views).map(([id, label]) => h("button", { key: id, id: "pi-tab-" + id, role: "tab", "aria-selected": view === id, "aria-controls": "pi-panel-" + id, tabIndex: view === id ? 0 : -1, onClick: () => setView(id), onKeyDown: (e) => {
+                const ids = Object.keys(views), i = ids.indexOf(id);
+                let next;
+                if (e.key === "ArrowRight") next = ids[(i + 1) % 4];
+                if (e.key === "ArrowLeft") next = ids[(i + 3) % 4];
+                if (e.key === "Home") next = ids[0];
+                if (e.key === "End") next = ids[3];
+                if (next) {
                   e.preventDefault();
-                  search();
-                } },
-                h("h2", null, "\u5BFB\u627E\u503C\u5F97\u7814\u7A76\u7684\u8BBA\u6587"),
-                input("\u4E3B\u9898\u5173\u952E\u8BCD", query, setQuery),
-                h("fieldset", null, h("legend", null, "\u8BBA\u6587\u6765\u6E90"), ...["arxiv", "openreview", "semantic-scholar", "openalex", "crossref"].map((s) => h("label", { key: s }, h("input", { type: "checkbox", checked: sources.includes(s), onChange: (e) => setSources(e.target.checked ? [...sources, s] : sources.filter((x) => x !== s)) }), s))),
-                h("details", null, h("summary", null, "\u66F4\u591A\u7B5B\u9009"), ...["author", "institution", "venue", "since", "until"].map((k) => input({ author: "\u4F5C\u8005", institution: "\u673A\u6784", venue: "\u4F1A\u8BAE / \u671F\u520A", since: "\u8D77\u59CB\u65E5\u671F", until: "\u7ED3\u675F\u65E5\u671F" }[k], advanced[k], (v) => setAdvanced({ ...advanced, [k]: v }), ["since", "until"].includes(k) ? "date" : "text")), input("\u6700\u4F4E\u5F15\u7528\u91CF", minCitations, setMinCitations, "number")),
-                h("label", null, "\u6392\u5E8F", h("select", { value: advanced.sort, onChange: (e) => setAdvanced({ ...advanced, sort: e.target.value }) }, ...Object.entries({ relevance: "\u76F8\u5173\u6027", date: "\u53D1\u8868\u65F6\u95F4", citations: "\u5F15\u7528\u91CF" }).map(([k, v]) => h("option", { key: k, value: k }, v)))),
-                h("div", { className: "pi-actions" }, h("button", { type: "submit", className: "pi-primary", disabled: busy || !query.trim() || !sources.length }, "\u68C0\u7D22\u8BBA\u6587"), button("\u91CD\u7F6E\u7B5B\u9009", () => {
-                  setAdvanced({ author: "", institution: "", venue: "", since: "", until: "", sort: "relevance" });
-                  setMinCitations("");
-                  setSources(["arxiv", "openalex"]);
-                }))
-              ),
-              h("details", { className: "pi-card" }, h("summary", null, "\u6301\u7EED\u5173\u6CE8\u7814\u7A76\u4E3B\u9898"), h("label", null, "\u6BCF\u884C\u4E00\u4E2A\u4E3B\u9898", h("textarea", { value: topics, onChange: (e) => setTopics(e.target.value) })), h("div", { className: "pi-actions" }, button("\u8BFB\u53D6\u5173\u6CE8\u4E3B\u9898", () => run("subscriptions")), button("\u4FDD\u5B58\u5173\u6CE8\u4E3B\u9898", () => run("subscriptions", { topics: topics.split("\n").map((s) => s.trim()).filter(Boolean) })), button("\u53D1\u73B0\u65B0\u589E\u8BBA\u6587", () => run("discover_updates"))), h("p", null, "\u5B9A\u671F\u53D1\u73B0\u7531 Harness \u6216\u5916\u90E8\u8C03\u5EA6\u5668\u89E6\u53D1\u3002"))
-            ),
-            h(
-              "section",
-              { className: "pi-card" },
-              h("h2", null, `\u68C0\u7D22\u7ED3\u679C \xB7 ${papers.length} \u7BC7`),
-              busy && job?.action === "search" ? h("p", null, "\u6B63\u5728\u67E5\u8BE2\uFF0C\u4EE5\u4E0B\u4FDD\u7559\u4E0A\u6B21\u7ED3\u679C\u2026") : null,
-              !papers.length ? h("p", null, "\u8F93\u5165\u4E3B\u9898\uFF0C\u6216\u5728\u201C\u521B\u5EFA\u7814\u7A76\u201D\u4E2D\u76F4\u63A5\u6307\u5B9A\u8BBA\u6587\u3002") : null,
-              ...papers.map((p, i) => h("article", { key: p.id || i, className: "pi-result" }, h("h3", null, p.title), h("p", { className: "pi-small" }, (p.authors || []).slice(0, 4).join("\u3001") + " \xB7 " + (p.published || p.year || "\u65E5\u671F\u672A\u77E5") + " \xB7 " + (p.sources?.join("\u3001") || p.source || "\u6765\u6E90\u672A\u77E5") + " \xB7 \u5F15\u7528 " + (p.citations ?? p.citationCount ?? "\u672A\u77E5")), p.abstract ? h("details", null, h("summary", null, "\u9605\u8BFB\u6458\u8981"), h("p", null, p.abstract)) : h("p", null, "\u6682\u65E0\u6458\u8981"), h("div", { className: "pi-actions" }, h("button", { onClick: () => selectPaper(p) }, "\u7814\u7A76\u8FD9\u7BC7"), safeSource(p.url) ? h("a", { href: safeSource(p.url), target: "_blank", rel: "noreferrer" }, "\u67E5\u770B\u6765\u6E90") : null)))
-            )
-          )),
-          panel("create", h(
-            "div",
-            { className: "pi-columns" },
-            h(
-              "section",
-              { className: "pi-card" },
-              h("h2", null, "\u8BBE\u7F6E\u672C\u6B21\u7814\u7A76"),
-              h("label", null, "\u7814\u7A76\u6A21\u5F0F", h("select", { value: mode, onChange: (e) => {
-                setMode(e.target.value);
-                if (e.target.value) {
-                  setOrigin(e.target.value);
-                  setModules([...modes[e.target.value]]);
+                  setView(next);
+                  document.getElementById("pi-tab-" + next)?.focus();
                 }
-              } }, h("option", { value: "" }, `\u81EA\u5B9A\u4E49${origin ? "\uFF08\u6765\u81EA" + modeLabels[origin] + "\uFF09" : ""}`), ...Object.entries(modeLabels).map(([v, l]) => h("option", { key: v, value: v }, l)))),
-              h("label", null, h("input", { type: "checkbox", checked: local, onChange: (e) => {
-                setReference(local ? remoteRef : localRef);
-                if (local) setLocalRef(reference);
-                else setRemoteRef(reference);
-                setLocal(e.target.checked);
-              } }), "\u4F7F\u7528\u5DE5\u4F5C\u533A\u5185\u672C\u5730\u6587\u4EF6"),
-              input(local ? "PDF / \u6587\u672C\u76F8\u5BF9\u8DEF\u5F84" : "\u8BBA\u6587\u6807\u9898 / \u94FE\u63A5 / DOI / arXiv \u7F16\u53F7", reference, setReference),
-              h("p", { className: "pi-small" }, local ? "\u6587\u4EF6\u5E94\u5DF2\u5728\u6240\u9009\u5DE5\u4F5C\u533A\u5185\uFF0C\u6B64\u5904\u4E0D\u4F1A\u4E0A\u4F20\u6587\u4EF6\u3002" : "\u6807\u9898\u4F1A\u5148\u68C0\u7D22\u5339\u914D\uFF1B\u9047\u5230\u591A\u4E2A\u5019\u9009\u65F6\u9700\u9009\u62E9\u8BBA\u6587\u3002"),
-              h("fieldset", null, h("legend", null, "\u7814\u7A76\u5185\u5BB9"), ...Object.entries({ "\u7406\u89E3\u8BBA\u6587": ["paper", "first-principles", "beginner"], "\u7814\u7A76\u4E0E\u8FC1\u79FB": ["landscape", "transfer", "sandbox"], "\u4EA7\u54C1\u4E0E\u884C\u52A8": ["features", "products", "experience", "decision"] }).map(([group, ids]) => h("div", { key: group }, h("h3", null, group), ...ids.map((id) => h("label", { key: id }, h("input", { type: "checkbox", checked: modules.includes(id), onChange: (e) => setCustom(e.target.checked ? [...modules, id] : modules.filter((m) => m !== id)) }), labels[id])))), h("div", { className: "pi-actions" }, button("\u5168\u9009", () => setCustom(Object.keys(labels))), button("\u6E05\u7A7A", () => setCustom([])))),
-              !compatibility ? input("\u6700\u591A\u6A21\u578B\u8C03\u7528\u6B21\u6570", maxCalls, setMaxCalls, "number") : h("p", null, "\u7814\u7A76\u670D\u52A1\u5C31\u7EEA\u540E\u53EF\u8BBE\u7F6E\u8C03\u7528\u9884\u7B97\u3002"),
-              h("p", { className: "pi-small" }, "\u7EE7\u7EED\u6216\u8865\u5145\u7814\u7A76\u65F6\u5305\u542B\u6B64\u524D\u8C03\u7528\u6B21\u6570\u3002\u9884\u7B97\u7528\u5C3D\u540E\u4F1A\u4FDD\u7559\u5DF2\u5B8C\u6210\u5185\u5BB9\u3002"),
-              h("details", null, h("summary", null, "Token \u4E0E\u8D39\u7528\u8BF4\u660E"), h("p", null, "\u5F53\u524D Harness \u8DEF\u7531\u672A\u63D0\u4F9B\u53EF\u9A8C\u8BC1\u7684 Token \u786C\u9650\u5236\uFF0C\u56E0\u6B64\u53EA\u5F00\u653E\u8C03\u7528\u6B21\u6570\u9884\u7B97\u3002\u5B9E\u9645 Token \u7528\u91CF\u6309\u6A21\u578B\u8FD4\u56DE\u8BB0\u5F55\uFF1B\u8D39\u7528\u672A\u77E5\u3002"))
-            ),
-            h("aside", { className: "pi-card pi-preview" }, h("h2", null, "\u5F00\u59CB\u524D\u786E\u8BA4"), h("p", null, reference || "\u5C1A\u672A\u6307\u5B9A\u8BBA\u6587"), h("p", null, `\u672C\u6B21 ${modules.length} \u9879\uFF1A${modules.map((id) => labels[id]).join("\u3001") || "\u5C1A\u672A\u9009\u62E9"}`), h("p", null, `\u6700\u591A ${maxCalls || "\u672A\u8BBE\u7F6E"} \u6B21\u6A21\u578B\u8C03\u7528`), h("p", null, "\u5C06\u4F7F\u7528\u6240\u9009\u4F1A\u8BDD\u7684\u6A21\u578B\u3002\u6587\u4EF6\u6743\u9650\u53CA\u6765\u6E90\u8BBF\u95EE\u80FD\u529B\u4F1A\u5728\u6267\u884C\u65F6\u68C0\u67E5\uFF1B\u62A5\u544A\u4FDD\u5B58\u5728\u8BE5\u5DE5\u4F5C\u533A\u914D\u7F6E\u7684\u6570\u636E\u76EE\u5F55\u3002"), h("p", { role: "status" }, issue || "\u914D\u7F6E\u5DF2\u5C31\u7EEA\uFF0C\u53EF\u4EE5\u5F00\u59CB\u3002"), h("button", { className: "pi-primary", disabled: !!issue, onClick: () => analyze(reference) }, "\u5F00\u59CB\u7814\u7A76"))
-          )),
-          panel("history", h(
-            "section",
-            { className: "pi-card" },
-            h("h2", null, "\u7814\u7A76\u5386\u53F2"),
-            h("p", null, "\u67E5\u770B\u5DF2\u5B8C\u6210\u62A5\u544A\uFF0C\u6216\u63A5\u7740\u5B8C\u6210\u672A\u5B8C\u6210\u7684\u7814\u7A76\u3002\u91CD\u65B0\u5206\u6790\u4F1A\u4FDD\u7559\u65E7\u7248\u672C\u3002"),
-            input("\u641C\u7D22\u8BBA\u6587\u3001\u5907\u6CE8\u6216\u62A5\u544A\u6B63\u6587", historyQuery, setHistoryQuery),
-            h("label", null, "\u7814\u7A76\u72B6\u6001", h("select", { value: historyStatus, onChange: (e) => setHistoryStatus(e.target.value) }, h("option", { value: "" }, "\u5168\u90E8\u72B6\u6001"), ...Object.entries(statusLabels).map(([v, l]) => h("option", { key: v, value: v }, l)))),
-            h("label", null, h("input", { type: "checkbox", checked: deleted, onChange: (e) => setDeleted(e.target.checked) }), "\u67E5\u770B\u5DF2\u5220\u9664\u8BB0\u5F55"),
-            h("div", { className: "pi-actions" }, button("\u65B0\u5EFA\u7814\u7A76", () => repair()), button("\u67E5\u8BE2\u5386\u53F2", () => {
-              setOffset(0);
-              setDetail(null);
-              run("library", historyArgs(0));
-            }), h("button", { disabled: busy || selected.length < 2 || selected.length > 5, onClick: () => run("compare_papers", { reports: selected }) }, `\u6BD4\u8F83\u6240\u9009\u8BBA\u6587\uFF08${selected.length}/5\uFF09`)),
-            h("p", { className: "pi-small" }, `\u5171 ${total} \u6761\u8BB0\u5F55`),
-            h(HistoryView, { runs, selected, setSelected, detail, setDetail, run: async (action, args) => {
-              if (action === "report") setView("report");
-              return run(action, args);
-            }, busy, modules, onRepair: repair, onBudget: (r) => {
-              setResumeTarget(r);
-              setView("create");
-            } }),
-            h("div", { className: "pi-actions" }, offset > 0 ? button("\u4E0A\u4E00\u9875", () => {
-              setOffset(offset - 20);
-              run("library", historyArgs(offset - 20));
-            }) : null, offset + 20 < total ? button("\u4E0B\u4E00\u9875", () => {
-              setOffset(offset + 20);
-              run("library", historyArgs(offset + 20));
-            }) : null)
-          )),
-          resumeTarget && view === "create" ? h("section", { className: "pi-card" }, h("h2", null, "\u8C03\u6574\u9884\u7B97\u5E76\u7EE7\u7EED"), h("p", null, resumeTarget.displayTitle || resumeTarget.paper?.title), h("p", null, "\u4FEE\u6539\u4E0A\u65B9\u8C03\u7528\u6B21\u6570\u603B\u9884\u7B97\u540E\u7EE7\u7EED\uFF1B\u5DF2\u5B8C\u6210\u7684\u5185\u5BB9\u4F1A\u590D\u7528\u3002"), button("\u6309\u65B0\u9884\u7B97\u7EE7\u7EED", () => {
-            run("resume", { key: resumeTarget.key, runId: resumeTarget.runId });
-            setResumeTarget(null);
-          }, true), button("\u53D6\u6D88\u6062\u590D", () => setResumeTarget(null))) : null,
-          panel("report", h("section", { className: "pi-card pi-report-card", ref: reportAnchor }, h("h2", null, "\u7814\u7A76\u62A5\u544A"), report ? h(
-            React.Fragment,
-            null,
-            h(ResearchControls, { bundle, run, busy, part: "overview" }),
-            h(ReportView, { text: report, onDownload: () => {
-              const url = URL.createObjectURL(new Blob([report], { type: "text/markdown;charset=utf-8" }));
-              const a = document.createElement("a");
-              a.href = url;
-              a.download = "paper-research.md";
-              a.click();
-              setTimeout(() => URL.revokeObjectURL(url), 1e3);
-            } }),
-            h(ResearchControls, { bundle, run, busy, part: "actions" })
-          ) : h("p", null, "\u5B8C\u6210\u7814\u7A76\u540E\u70B9\u51FB\u201C\u67E5\u770B\u62A5\u544A\u201D\uFF0C\u6216\u4ECE\u7814\u7A76\u5386\u53F2\u6253\u5F00\u5DF2\u6709\u62A5\u544A\u3002")))
+              } }, label))),
+              h(
+                "section",
+                { className: "pi-status", hidden: !showStatus && !busy && !error, "aria-label": "\u4EFB\u52A1\u72B6\u6001" },
+                h("div", { role: "status" }, status),
+                job?.startedAt ? h("p", { className: "pi-small" }, `\u672C\u6B21\u64CD\u4F5C\u5DF2\u7B49\u5F85 ${elapsed} \u79D2`) : null,
+                progress?.usage ? h("p", null, `\u6A21\u578B\u8C03\u7528 ${progress.usage.calls} \u6B21 \xB7 \u5DF2\u77E5 ${progress.usage.knownTokens} Token \xB7 ${progress.usage.unknownUsageCalls} \u6B21\u7528\u91CF\u672A\u77E5 \xB7 \u8D39\u7528\u672A\u77E5`) : null,
+                h(
+                  "div",
+                  { className: "pi-actions" },
+                  job ? h("button", { disabled: cancelling, onClick: async () => {
+                    setCancelling(true);
+                    try {
+                      await api("/cancel", { id: job.id });
+                      setStatus("\u6B63\u5728\u53D6\u6D88\uFF0C\u7B49\u5F85\u5F53\u524D\u64CD\u4F5C\u7ED3\u675F\uFF1B\u540E\u7EED\u9636\u6BB5\u5C06\u505C\u6B62\u3002");
+                    } catch (e) {
+                      setError(e.message);
+                      setCancelling(false);
+                    }
+                  } }, cancelling ? "\u6B63\u5728\u53D6\u6D88\u2026" : "\u53D6\u6D88\u4EFB\u52A1") : null,
+                  report ? h("button", { onClick: () => setView("report") }, "\u67E5\u770B\u62A5\u544A") : null
+                )
+              ),
+              compatibility ? h("p", { role: "status", className: "pi-note" }, compatibility) : null,
+              error ? h("p", { role: "alert", className: "pi-error" }, error) : null,
+              panel("discover", h(
+                "div",
+                { className: "pi-columns" },
+                h(
+                  "div",
+                  null,
+                  h(
+                    "form",
+                    { className: "pi-card", onSubmit: (e) => {
+                      e.preventDefault();
+                      search();
+                    } },
+                    h("h2", null, "\u5BFB\u627E\u503C\u5F97\u7814\u7A76\u7684\u8BBA\u6587"),
+                    input("\u4E3B\u9898\u5173\u952E\u8BCD", query, setQuery),
+                    h("fieldset", null, h("legend", null, "\u8BBA\u6587\u6765\u6E90"), ...["arxiv", "openreview", "semantic-scholar", "openalex", "crossref"].map((s) => h("label", { key: s }, h("input", { type: "checkbox", checked: sources.includes(s), onChange: (e) => setSources(e.target.checked ? [...sources, s] : sources.filter((x) => x !== s)) }), s))),
+                    h("details", null, h("summary", null, "\u66F4\u591A\u7B5B\u9009"), ...["author", "institution", "venue", "since", "until"].map((k) => input({ author: "\u4F5C\u8005", institution: "\u673A\u6784", venue: "\u4F1A\u8BAE / \u671F\u520A", since: "\u8D77\u59CB\u65E5\u671F", until: "\u7ED3\u675F\u65E5\u671F" }[k], advanced[k], (v) => setAdvanced({ ...advanced, [k]: v }), ["since", "until"].includes(k) ? "date" : "text")), input("\u6700\u4F4E\u5F15\u7528\u91CF", minCitations, setMinCitations, "number")),
+                    h("label", null, "\u6392\u5E8F", h("select", { value: advanced.sort, onChange: (e) => setAdvanced({ ...advanced, sort: e.target.value }) }, ...Object.entries({ relevance: "\u76F8\u5173\u6027", date: "\u53D1\u8868\u65F6\u95F4", citations: "\u5F15\u7528\u91CF" }).map(([k, v]) => h("option", { key: k, value: k }, v)))),
+                    h("div", { className: "pi-actions" }, h("button", { type: "submit", className: "pi-primary", disabled: busy || !query.trim() || !sources.length }, "\u68C0\u7D22\u8BBA\u6587"), button("\u91CD\u7F6E\u7B5B\u9009", () => {
+                      setAdvanced({ author: "", institution: "", venue: "", since: "", until: "", sort: "relevance" });
+                      setMinCitations("");
+                      setSources(["arxiv", "openalex"]);
+                    }))
+                  ),
+                  h("details", { className: "pi-card" }, h("summary", null, "\u6301\u7EED\u5173\u6CE8\u7814\u7A76\u4E3B\u9898"), h("label", null, "\u6BCF\u884C\u4E00\u4E2A\u4E3B\u9898", h("textarea", { value: topics, onChange: (e) => setTopics(e.target.value) })), h("div", { className: "pi-actions" }, button("\u8BFB\u53D6\u5173\u6CE8\u4E3B\u9898", () => run("subscriptions")), button("\u4FDD\u5B58\u5173\u6CE8\u4E3B\u9898", () => run("subscriptions", { topics: topics.split("\n").map((s) => s.trim()).filter(Boolean) })), button("\u53D1\u73B0\u65B0\u589E\u8BBA\u6587", () => run("discover_updates"))), h("p", null, "\u5B9A\u671F\u53D1\u73B0\u7531 Harness \u6216\u5916\u90E8\u8C03\u5EA6\u5668\u89E6\u53D1\u3002"))
+                ),
+                h(
+                  "section",
+                  { className: "pi-card" },
+                  h("h2", null, `\u68C0\u7D22\u7ED3\u679C \xB7 ${papers.length} \u7BC7`),
+                  busy && job?.action === "search" ? h("p", null, "\u6B63\u5728\u67E5\u8BE2\uFF0C\u4EE5\u4E0B\u4FDD\u7559\u4E0A\u6B21\u7ED3\u679C\u2026") : null,
+                  !papers.length ? h("p", null, "\u8F93\u5165\u4E3B\u9898\uFF0C\u6216\u5728\u201C\u521B\u5EFA\u7814\u7A76\u201D\u4E2D\u76F4\u63A5\u6307\u5B9A\u8BBA\u6587\u3002") : null,
+                  ...papers.map((p, i) => h("article", { key: p.id || i, className: "pi-result" }, h("h3", null, p.title), h("p", { className: "pi-small" }, (p.authors || []).slice(0, 4).join("\u3001") + " \xB7 " + (p.published || p.year || "\u65E5\u671F\u672A\u77E5") + " \xB7 " + (p.sources?.join("\u3001") || p.source || "\u6765\u6E90\u672A\u77E5") + " \xB7 \u5F15\u7528 " + (p.citations ?? p.citationCount ?? "\u672A\u77E5")), p.abstract ? h("details", null, h("summary", null, "\u9605\u8BFB\u6458\u8981"), h("p", null, p.abstract)) : h("p", null, "\u6682\u65E0\u6458\u8981"), h("div", { className: "pi-actions" }, h("button", { onClick: () => selectPaper(p) }, "\u7814\u7A76\u8FD9\u7BC7"), safeSource(p.url) ? h("a", { href: safeSource(p.url), target: "_blank", rel: "noreferrer" }, "\u67E5\u770B\u6765\u6E90") : null)))
+                )
+              )),
+              panel("create", h(
+                "div",
+                { className: "pi-columns" },
+                h(
+                  "section",
+                  { className: "pi-card" },
+                  h("h2", null, "\u8BBE\u7F6E\u672C\u6B21\u7814\u7A76"),
+                  h("label", null, "\u7814\u7A76\u6A21\u5F0F", h("select", { value: mode, onChange: (e) => {
+                    setMode(e.target.value);
+                    if (e.target.value) {
+                      setOrigin(e.target.value);
+                      setModules([...modes[e.target.value]]);
+                    }
+                  } }, h("option", { value: "" }, `\u81EA\u5B9A\u4E49${origin ? "\uFF08\u6765\u81EA" + modeLabels[origin] + "\uFF09" : ""}`), ...Object.entries(modeLabels).map(([v, l]) => h("option", { key: v, value: v }, l)))),
+                  h("label", null, h("input", { type: "checkbox", checked: local, onChange: (e) => {
+                    setReference(local ? remoteRef : localRef);
+                    if (local) setLocalRef(reference);
+                    else setRemoteRef(reference);
+                    setLocal(e.target.checked);
+                  } }), "\u4F7F\u7528\u5DE5\u4F5C\u533A\u5185\u672C\u5730\u6587\u4EF6"),
+                  input(local ? "PDF / \u6587\u672C\u76F8\u5BF9\u8DEF\u5F84" : "\u8BBA\u6587\u6807\u9898 / \u94FE\u63A5 / DOI / arXiv \u7F16\u53F7", reference, setReference),
+                  h("p", { className: "pi-small" }, local ? "\u6587\u4EF6\u5E94\u5DF2\u5728\u6240\u9009\u5DE5\u4F5C\u533A\u5185\uFF0C\u6B64\u5904\u4E0D\u4F1A\u4E0A\u4F20\u6587\u4EF6\u3002" : "\u6807\u9898\u4F1A\u5148\u68C0\u7D22\u5339\u914D\uFF1B\u9047\u5230\u591A\u4E2A\u5019\u9009\u65F6\u9700\u9009\u62E9\u8BBA\u6587\u3002"),
+                  h("fieldset", null, h("legend", null, "\u7814\u7A76\u5185\u5BB9"), ...Object.entries({ "\u7406\u89E3\u8BBA\u6587": ["paper", "first-principles", "beginner"], "\u7814\u7A76\u4E0E\u8FC1\u79FB": ["landscape", "transfer", "sandbox"], "\u4EA7\u54C1\u4E0E\u884C\u52A8": ["features", "products", "experience", "decision"] }).map(([group, ids]) => h("div", { key: group }, h("h3", null, group), ...ids.map((id) => h("label", { key: id }, h("input", { type: "checkbox", checked: modules.includes(id), onChange: (e) => setCustom(e.target.checked ? [...modules, id] : modules.filter((m) => m !== id)) }), labels[id])))), h("div", { className: "pi-actions" }, button("\u5168\u9009", () => setCustom(Object.keys(labels))), button("\u6E05\u7A7A", () => setCustom([])))),
+                  !compatibility ? input("\u6700\u591A\u6A21\u578B\u8C03\u7528\u6B21\u6570", maxCalls, setMaxCalls, "number") : h("p", null, "\u7814\u7A76\u670D\u52A1\u5C31\u7EEA\u540E\u53EF\u8BBE\u7F6E\u8C03\u7528\u9884\u7B97\u3002"),
+                  h("p", { className: "pi-small" }, "\u7EE7\u7EED\u6216\u8865\u5145\u7814\u7A76\u65F6\u5305\u542B\u6B64\u524D\u8C03\u7528\u6B21\u6570\u3002\u9884\u7B97\u7528\u5C3D\u540E\u4F1A\u4FDD\u7559\u5DF2\u5B8C\u6210\u5185\u5BB9\u3002"),
+                  h("details", null, h("summary", null, "Token \u4E0E\u8D39\u7528\u8BF4\u660E"), h("p", null, "\u5F53\u524D Harness \u8DEF\u7531\u672A\u63D0\u4F9B\u53EF\u9A8C\u8BC1\u7684 Token \u786C\u9650\u5236\uFF0C\u56E0\u6B64\u53EA\u5F00\u653E\u8C03\u7528\u6B21\u6570\u9884\u7B97\u3002\u5B9E\u9645 Token \u7528\u91CF\u6309\u6A21\u578B\u8FD4\u56DE\u8BB0\u5F55\uFF1B\u8D39\u7528\u672A\u77E5\u3002"))
+                ),
+                h("aside", { className: "pi-card pi-preview" }, h("h2", null, "\u5F00\u59CB\u524D\u786E\u8BA4"), h("p", null, reference || "\u5C1A\u672A\u6307\u5B9A\u8BBA\u6587"), h("p", null, `\u672C\u6B21 ${modules.length} \u9879\uFF1A${modules.map((id) => labels[id]).join("\u3001") || "\u5C1A\u672A\u9009\u62E9"}`), h("p", null, `\u6700\u591A ${maxCalls || "\u672A\u8BBE\u7F6E"} \u6B21\u6A21\u578B\u8C03\u7528`), h("p", null, "\u5C06\u4F7F\u7528\u6240\u9009\u4F1A\u8BDD\u7684\u6A21\u578B\u3002\u6587\u4EF6\u6743\u9650\u53CA\u6765\u6E90\u8BBF\u95EE\u80FD\u529B\u4F1A\u5728\u6267\u884C\u65F6\u68C0\u67E5\uFF1B\u62A5\u544A\u4FDD\u5B58\u5728\u8BE5\u5DE5\u4F5C\u533A\u914D\u7F6E\u7684\u6570\u636E\u76EE\u5F55\u3002"), h("p", { role: "status" }, issue || "\u914D\u7F6E\u5DF2\u5C31\u7EEA\uFF0C\u53EF\u4EE5\u5F00\u59CB\u3002"), h("button", { className: "pi-primary", disabled: !!issue, onClick: () => analyze(reference) }, "\u5F00\u59CB\u7814\u7A76"))
+              )),
+              panel("history", h(
+                "section",
+                { className: "pi-card" },
+                h("h2", null, "\u7814\u7A76\u5386\u53F2"),
+                h("p", null, "\u67E5\u770B\u5DF2\u5B8C\u6210\u62A5\u544A\uFF0C\u6216\u63A5\u7740\u5B8C\u6210\u672A\u5B8C\u6210\u7684\u7814\u7A76\u3002\u91CD\u65B0\u5206\u6790\u4F1A\u4FDD\u7559\u65E7\u7248\u672C\u3002"),
+                input("\u641C\u7D22\u8BBA\u6587\u3001\u5907\u6CE8\u6216\u62A5\u544A\u6B63\u6587", historyQuery, setHistoryQuery),
+                h("label", null, "\u7814\u7A76\u72B6\u6001", h("select", { value: historyStatus, onChange: (e) => setHistoryStatus(e.target.value) }, h("option", { value: "" }, "\u5168\u90E8\u72B6\u6001"), ...Object.entries(statusLabels).map(([v, l]) => h("option", { key: v, value: v }, l)))),
+                h("label", null, h("input", { type: "checkbox", checked: deleted, onChange: (e) => setDeleted(e.target.checked) }), "\u67E5\u770B\u5DF2\u5220\u9664\u8BB0\u5F55"),
+                h("div", { className: "pi-actions" }, button("\u65B0\u5EFA\u7814\u7A76", () => repair()), button("\u67E5\u8BE2\u5386\u53F2", () => {
+                  setOffset(0);
+                  setDetail(null);
+                  run("library", historyArgs(0));
+                }), h("button", { disabled: busy || selected.length < 2 || selected.length > 5, onClick: () => run("compare_papers", { reports: selected }) }, `\u6BD4\u8F83\u6240\u9009\u8BBA\u6587\uFF08${selected.length}/5\uFF09`)),
+                h("p", { className: "pi-small" }, `\u5171 ${total} \u6761\u8BB0\u5F55`),
+                h(HistoryView, { runs, selected, setSelected, detail, setDetail, run: async (action, args) => {
+                  if (action === "report") setView("report");
+                  return run(action, args);
+                }, busy, modules, onRepair: repair, onBudget: (r) => {
+                  setResumeTarget(r);
+                  setView("create");
+                } }),
+                h("div", { className: "pi-actions" }, offset > 0 ? button("\u4E0A\u4E00\u9875", () => {
+                  setOffset(offset - 20);
+                  run("library", historyArgs(offset - 20));
+                }) : null, offset + 20 < total ? button("\u4E0B\u4E00\u9875", () => {
+                  setOffset(offset + 20);
+                  run("library", historyArgs(offset + 20));
+                }) : null)
+              )),
+              resumeTarget && view === "create" ? h("section", { className: "pi-card" }, h("h2", null, "\u8C03\u6574\u9884\u7B97\u5E76\u7EE7\u7EED"), h("p", null, resumeTarget.displayTitle || resumeTarget.paper?.title), h("p", null, "\u4FEE\u6539\u4E0A\u65B9\u8C03\u7528\u6B21\u6570\u603B\u9884\u7B97\u540E\u7EE7\u7EED\uFF1B\u5DF2\u5B8C\u6210\u7684\u5185\u5BB9\u4F1A\u590D\u7528\u3002"), button("\u6309\u65B0\u9884\u7B97\u7EE7\u7EED", () => {
+                run("resume", { key: resumeTarget.key, runId: resumeTarget.runId });
+                setResumeTarget(null);
+              }, true), button("\u53D6\u6D88\u6062\u590D", () => setResumeTarget(null))) : null,
+              panel("report", h("section", { className: "pi-card pi-report-card", ref: reportAnchor }, h("h2", null, "\u7814\u7A76\u62A5\u544A"), report ? h(
+                React.Fragment,
+                null,
+                h(ResearchControls, { bundle, run, busy, part: "overview" }),
+                h(ReportView, { text: report, onDownload: () => {
+                  const url = URL.createObjectURL(new Blob([report], { type: "text/markdown;charset=utf-8" }));
+                  const a = document.createElement("a");
+                  a.href = url;
+                  a.download = "paper-research.md";
+                  a.click();
+                  setTimeout(() => URL.revokeObjectURL(url), 1e3);
+                } }),
+                h(ResearchControls, { bundle, run, busy, part: "actions" })
+              ) : h("p", null, "\u5B8C\u6210\u7814\u7A76\u540E\u70B9\u51FB\u201C\u67E5\u770B\u62A5\u544A\u201D\uFF0C\u6216\u4ECE\u7814\u7A76\u5386\u53F2\u6253\u5F00\u5DF2\u6709\u62A5\u544A\u3002")))
+            )
+          )
         );
       }
       return {
@@ -1136,7 +1222,7 @@
         apply(ctx) {
           ctx.effect(() => {
             const style = document.createElement("style");
-            style.textContent = css + readingStyle + workbenchStyle;
+            style.textContent = css + readingStyle + workbenchStyle + readerStyle;
             document.head.appendChild(style);
             return () => style.remove();
           });
